@@ -501,7 +501,11 @@ namespace Gungnir
             }
 
             Building_Door door = cell.GetDoor(Map);
-            if (door != null && !door.Open) door.TakeDamage(MakeGungnirDamage(travelAngle));
+            if (door != null && !door.Open)
+            {
+                GungnirDefOf.Gungnir_Pierce.PlayOneShot(new TargetInfo(cell, Map));
+                door.TakeDamage(MakeGungnirDamage(travelAngle));
+            }
         }
 
         /// <summary>
@@ -509,6 +513,7 @@ namespace Gungnir
         /// </summary>
         private void HitEverythingInCell(IntVec3 cell)
         {
+            bool piercedSomething = false;
             foreach (Thing thing in cell.GetThingList(Map).ToList())
             {
                 if (thing == this || thing == destinationPawn || thing.Destroyed) continue;
@@ -518,8 +523,10 @@ namespace Gungnir
                 if (category == ThingCategory.Filth || category == ThingCategory.Mote || category == ThingCategory.Ethereal || category == ThingCategory.Projectile) continue;
 
                 if (!alreadyHitThings.Add(thing)) continue;
+                if (thing is Pawn || thing is Building) piercedSomething = true;
                 thing.TakeDamage(MakeGungnirDamage(travelAngle));
             }
+            if (piercedSomething) GungnirDefOf.Gungnir_Pierce.PlayOneShot(new TargetInfo(cell, Map));
         }
 
         /// <summary>
