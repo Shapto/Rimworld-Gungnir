@@ -16,6 +16,17 @@
 				</statFactors>
 			</li>
 		</stages>
+		<renderNodeProperties>
+  			<li>
+				<nodeClass>Gungnir.PawnRenderNode_LodgedGungnir</nodeClass>
+				<workerClass>Gungnir.PawnRenderNodeWorker_LodgedGungnir</workerClass>
+				<texPath>Weapons/Gungnir</texPath>
+				<parentTagDef>Body</parentTagDef>
+				<overrideMeshSize>(1.6, 1.6)</overrideMeshSize>
+				<baseLayer>-10</baseLayer>
+				<rotDrawMode>Fresh, Rotting</rotDrawMode>
+ 		 	</li>
+		</renderNodeProperties>
 	</HediffDef>
 
 	<HediffDef>

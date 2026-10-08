@@ -82,6 +82,8 @@
     <Compile Include="JobDriver_RipOutGungnir.cs" />
     <Compile Include="Patch_PawnCarryTracker_TryStartCarry.cs" />
     <Compile Include="Patch_Pawn_DeSpawn.cs" />
+    <Compile Include="PawnRenderNodeWorker_LodgedGungnir.cs" />
+    <Compile Include="PawnRenderNode_LodgedGungnir.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

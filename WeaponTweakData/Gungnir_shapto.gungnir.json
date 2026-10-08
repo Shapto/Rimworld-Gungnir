@@ -1,0 +1,14 @@
+{
+  "TextureModID": "shapto.gungnir",
+  "ItemDefName": "Gungnir",
+  "ItemType": "ThingDef",
+  "ItemTypeNamespace": "Verse",
+  "OffX": 0.238947853,
+  "Rotation": 45.0,
+  "ScaleX": 1.6,
+  "ScaleY": 1.6,
+  "HandsMode": 1,
+  "BladeStart": 0.217906073,
+  "BladeEnd": 1.132423,
+  "MeleeWeaponType": 54
+}
