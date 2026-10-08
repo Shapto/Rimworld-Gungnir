@@ -3,7 +3,7 @@
 	<AbilityDef>
 		<defName>Gungnir_Throw</defName>
 		<label>Harpoon Throw</label>
-		<description>This throw will strike and pierce through without fail.</description>
+		<description>Throw Gungnir. It will weave and pierce through everything until it impales the target.</description>
 		<iconPath>UI/Gungnir_Throw</iconPath>
 		<disableGizmoWhileUndrafted>true</disableGizmoWhileUndrafted>
 		<verbProperties>
@@ -25,7 +25,7 @@
 	<AbilityDef>
 		<defName>Gungnir_Recall</defName>
 		<label>return to me.</label>
-		<description>Call Gungnir back. It tears free of whatever holds it and comes home through anything in its way.</description>
+		<description>Recall Gungnir. It will violently tear itself free and home back to the wielder, piercing through anything in its path.</description>
 		<iconPath>UI/Gungnir_Recall</iconPath>
 		<targetRequired>false</targetRequired>
 		<hostile>false</hostile>
