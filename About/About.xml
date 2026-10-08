@@ -6,7 +6,7 @@
   <supportedVersions>
     <li>1.6</li>
   </supportedVersions>
-  <description>TODO</description>
+  <description>vespas cool harpoon</description>
   <modDependencies>
     <li>
       <packageId>brrainz.harmony</packageId>
