@@ -3,7 +3,7 @@
 	<ThingDef ParentName="BaseMeleeWeapon_Sharp">
 		<defName>Gungnir</defName>
 		<label>Gungnir</label>
-		<description>A precious relic found in the far reaches of the Rim, fashioned into the head of a harpoon. It emanates a constant, ambient droning that amplifies with every strike and is rather uncomfortable to wield. Much like its Coreworld mythological namesake, Gungnir will always hit its mark, piercing and weaving through anything in its way to impale it.</description>
+		<description>A precious relic found in the far reaches of the Rim, fashioned into the head of a harpoon. It emanates a constant, ambient droning that amplifies with every strike and is rather uncomfortable to wield. Much like its Coreworld mythological namesake, Gungnir will always hit its mark, piercing and weaving through anything in its way to impale it. It is as much of a danger in flight to a target and the wielder. Catching it without injury requires great strength and finesse.</description>
 		<techLevel>Archotech</techLevel>
 		<graphicData>
 			<texPath>Weapons/Gungnir</texPath>
