@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ModMetaData>
+  <name>Limbus Company: Gungnir</name>
+  <author>Shapto</author>
+  <packageId>shapto.gungnir</packageId>
+  <supportedVersions>
+    <li>1.6</li>
+  </supportedVersions>
+  <description>TODO</description>
+  <modDependencies>
+    <li>
+      <packageId>brrainz.harmony</packageId>
+      <displayName>Harmony</displayName>
+      <steamWorkshopUrl>steam://url/CommunityFilePage/2009463077</steamWorkshopUrl>
+    </li>
+    <li>
+      <packageId>shapto.singularityframework</packageId>
+      <displayName>Singularity Framework</displayName>
+      <downloadUrl>https://github.com/Shapto/Rimworld-SingularityFramework</downloadUrl>
+    </li>
+  </modDependencies>
+  <loadAfter>
+    <li>brrainz.harmony</li>
+    <li>shapto.singularityframework</li>
+  </loadAfter>
+</ModMetaData>

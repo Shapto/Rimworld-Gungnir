@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+	<ThingDef ParentName="BaseMeleeWeapon_Sharp">
+		<defName>Gungnir</defName>
+		<label>Gungnir</label>
+		<description>A speartip fashioned into a harpoon reverberating out sharp vibrations wherever it lands.</description>
+		<techLevel>Archotech</techLevel>
+		<graphicData>
+			<texPath>Weapons/Gungnir</texPath>
+			<graphicClass>Graphic_Single</graphicClass>
+			<drawSize>(1.6, 1.6)</drawSize>
+		</graphicData>
+		<statBases>
+			<MarketValue>5000</MarketValue>
+			<Mass>3</Mass>
+			<Beauty>5</Beauty>
+			<Flammability>0</Flammability>
+			<DeteriorationRate>0</DeteriorationRate>
+		</statBases>
+		<useHitPoints>false</useHitPoints>
+		<smeltable>false</smeltable>
+		<recipeMaker IsNull="True"/>
+		<thingSetMakerTags>
+			<li>RewardStandardLowFreq</li>
+		</thingSetMakerTags>
+		<tradeability>None</tradeability>
+		<tools>
+			<li>
+				<label>shaft</label>
+				<capacities>
+					<li>Blunt</li>
+				</capacities>
+				<power>21</power>
+				<cooldownTime>1.6</cooldownTime>
+				<armorPenetration>0.3</armorPenetration>
+			</li>
+			<li>
+				<label>speartip</label>
+				<capacities>
+					<li>Stab</li>
+				</capacities>
+				<power>48</power>
+				<cooldownTime>1.6</cooldownTime>
+				<armorPenetration>1.6</armorPenetration>
+				<chanceFactor>2</chanceFactor>
+			</li>
+			<li>
+				<label>edge</label>
+				<capacities>
+					<li>Cut</li>
+				</capacities>
+				<power>46</power>
+				<cooldownTime>1.6</cooldownTime>
+				<armorPenetration>1.55</armorPenetration>
+			</li>
+		</tools>
+		<comps>
+			<li Class="SingularityFramework.Relics.CompProperties_RelicAptitude">
+				<rejectsUnworthy>false</rejectsUnworthy>
+			</li>
+		</comps>
+		<equippedAngleOffset>-45</equippedAngleOffset>
+	</ThingDef>
+</Defs>

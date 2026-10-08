@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Patch>
+	<Operation Class="PatchOperationAdd">
+		<xpath>Defs/ThingSetMakerDef[defName="MapGen_AncientTempleContents"]/root/options</xpath>
+		<value>
+			<li>
+				<chance>0.03</chance>
+				<thingSetMaker Class="ThingSetMaker_Count">
+					<fixedParams>
+						<filter>
+							<thingDefs>
+								<li>Gungnir</li>
+							</thingDefs>
+						</filter>
+						<countRange>1</countRange>
+					</fixedParams>
+				</thingSetMaker>
+			</li>
+		</value>
+	</Operation>
+	<Operation Class="PatchOperationAdd">
+		<xpath>Defs/ThingSetMakerDef[defName="MapGen_AncientComplexRoomLoot_Default"]/root/options</xpath>
+		<value>
+			<li>
+				<weight>0.01</weight>
+				<thingSetMaker Class="ThingSetMaker_Count">
+					<fixedParams>
+						<filter>
+							<thingDefs>
+								<li>Gungnir</li>
+							</thingDefs>
+						</filter>
+						<countRange>1</countRange>
+					</fixedParams>
+				</thingSetMaker>
+			</li>
+		</value>
+	</Operation>
+</Patch>

@@ -1,0 +1,28 @@
+Gungnir:
+
+It's built on Singularity Framework
+It's a spear weapon (pierce) that can also be thrown
+It should be better than persona monosword
+Gungnir NEVER misses
+Unworthy pawns are not rejected (rejectsUnworthy = false). They can hold it, throw it and recall it.
+Partial aptitude lowers Gungnir's own stats through the framework's stat factors.
+On recall, Gungnir comes back and has to be caught: if youre unworthy you get slammed with the full force of the weapon and have to
+take time to rip it out. Ripping it out causes damage. Works anywhere on the map and gungnir just comes back
+It goes around mountains and walls and slams through every door on the way, even locked ones. It damages anyone standing between it and the wielder; Damages anything it pierces
+Throwing leaves the wielder without Gungnir
+
+If anything happens to the impaled body (it dies, is destroyed, leaves the map or gets carried off), Gungnir flies back on its own.
+If the wielder isn't on the map, it drops where the body was last seen.
+If the wielder is gone (dead, downed or off the map) while Gungnir is lodged, it stays lodged until it's ripped out by anyone.
+
+Gungnir hitting a target stuns the target
+
+Gungnir's droning:
+Those impaled by the harpoon are pulverized as successive strikes amplify its vibrating force.
+Attacking a target with gungnir increases droning: amplifies damage taken
+Does not decay
+Every attack gives 1% to severity
+Gungnir returning uses up all droning for a big damage payoff after leaving the target
+Gungnir's droning only works with "alive" targets (not a corpse)
+
+
