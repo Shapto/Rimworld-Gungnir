@@ -324,12 +324,6 @@ namespace Gungnir
             }
 
             MoveAlongPath();
-            if (!hasDrawAngle)
-            {
-                drawAngle = travelAngle;
-                hasDrawAngle = true;
-            }
-            drawAngle = Mathf.MoveTowardsAngle(drawAngle, travelAngle, MaximumTurnDegreesPerTick);
             if (Destroyed) return;
             if (pathCells.Count == 0 && Position.InHorDistOf(destinationPawn.Position, 1.5f)) ArriveAtDestination();
         }
@@ -433,14 +427,14 @@ namespace Gungnir
                 float distanceToWaypoint = towardWaypoint.magnitude;
                 bool hasNextWaypoint = pathCells.Count > 1;
 
-                if (hasNextWaypoint && distanceToWaypoint < CornerRoundingDistance && IsGentleTurn(pathCells[0], pathCells[1]))
+                if (distanceToWaypoint < 0.05f || (hasNextWaypoint && distanceToWaypoint < CornerRoundingDistance * 0.5f))
                 {
                     pathCells.RemoveAt(0);
                     continue;
                 }
 
                 Vector3 aimPoint = waypointCenter;
-                if (hasNextWaypoint && distanceToWaypoint < CornerRoundingDistance)
+                if (hasNextWaypoint && distanceToWaypoint < CornerRoundingDistance && IsGentleTurn(pathCells[0], pathCells[1]))
                 {
                     float cornerBlend = 1f - distanceToWaypoint / CornerRoundingDistance;
                     aimPoint = Vector3.Lerp(waypointCenter, FlatCenter(pathCells[1]), cornerBlend * 0.5f);
@@ -464,6 +458,12 @@ namespace Gungnir
                 OnEnteredCell(currentCell);
                 if (Destroyed) return;
             }
+            if (!hasDrawAngle)
+            {
+                drawAngle = travelAngle;
+                hasDrawAngle = true;
+            }
+            drawAngle = Mathf.MoveTowardsAngle(drawAngle, travelAngle, MaximumTurnDegreesPerTick);
         }
 
         /// <summary>
@@ -615,12 +615,6 @@ namespace Gungnir
 
             mode = modeBeforeStuck;
             if (!TryRepath()) StartStraightFlight();
-            if (!hasDrawAngle)
-            {
-                drawAngle = travelAngle;
-                hasDrawAngle = true;
-            }
-            drawAngle = Mathf.MoveTowardsAngle(drawAngle, travelAngle, MaximumTurnDegreesPerTick);
         }
 
         /// <summary>

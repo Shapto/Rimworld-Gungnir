@@ -20,6 +20,12 @@ namespace Gungnir
         private const float MaximumNegativeEffectBonus = 2f;
 
         /// <summary>
+        /// The base damage of Gungnir tearing out of a body. Recalls multiply it by the negative-effect bonus; manual rip-outs use it as is.
+        /// Droning amplifies both.
+        /// </summary>
+        public const float LeavingDamage = 18f;
+
+        /// <summary>
         /// True if the wielder could catch Gungnir on this map right now: alive, awake, and here.
         /// When false, the wielder counts as gone, and colonists may rip Gungnir out themselves.
         /// </summary>

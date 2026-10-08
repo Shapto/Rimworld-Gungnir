@@ -135,7 +135,7 @@ namespace Gungnir
 
             heldGungnir.Remove(gungnir);
 
-            float leavingDamage = isRecall ? GungnirUtility.GungnirDamage * GungnirUtility.NegativeEffectFactor(pawn) : GungnirUtility.GungnirDamage;
+            float leavingDamage = isRecall ? GungnirUtility.LeavingDamage * GungnirUtility.NegativeEffectFactor(pawn) : GungnirUtility.LeavingDamage;
             BodyPartRecord lodgedPart = Part != null && !pawn.health.hediffSet.PartIsMissing(Part) ? Part : null;
             float leavingAngle = wielder != null ? (wielder.Position - pawn.Position).AngleFlat : 0f;
             pawn.TakeDamage(GungnirUtility.MakeGungnirDamage(wielder, leavingAngle, leavingDamage, lodgedPart));
