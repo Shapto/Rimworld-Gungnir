@@ -24,10 +24,9 @@ namespace Gungnir
     /// </summary>
     public class GungnirFlight : Thing, IThingHolder
     {
-        private const float CellsPerTick = 1.5f;
+        private const float CellsPerTick = 0.8f;
         private const int RepathIntervalTicks = 10;
         private const int StuckCheckIntervalTicks = 15;
-        private const int MaximumPiercesPerAttempt = 10;
         private const float ThrowDamage = 48f;
         private const float ThrowArmorPenetration = 1.6f;
         private const int ThrowStunTicks = 120;
@@ -48,6 +47,16 @@ namespace Gungnir
         private IntVec3 lastDestinationCell;
         private int ticksUntilRepath;
         private IntVec3 stuckWallCell;
+
+        /// <summary>
+        /// True while flying a straight line because no route exists, either at a wall to hit or straight at the target.
+        /// </summary>
+        private bool isFlyingStraight;
+
+        /// <summary>
+        /// The wall the straight flight is charging at, or invalid if the line to the target is clear.
+        /// </summary>
+        private IntVec3 chargeWallCell = IntVec3.Invalid;
 
         public GungnirFlight()
         {
@@ -80,7 +89,7 @@ namespace Gungnir
             flight.exactPosition.y = AltitudeLayer.Projectile.AltitudeFor();
             GenSpawn.Spawn(flight, thrower.Position, thrower.Map);
 
-            if (!flight.TryRepath()) flight.PierceOrGetStuck();
+            if (!flight.TryRepath()) flight.StartStraightFlight();
             return flight;
         }
 
@@ -101,17 +110,30 @@ namespace Gungnir
                 return;
             }
 
+            if (isFlyingStraight)
+            {
+                MoveAlongPath();
+                if (Destroyed || pathCells.Count > 0) return;
+
+                if (chargeWallCell.IsValid) ResolveWallHit();
+                else if (Position.InHorDistOf(destinationPawn.Position, 1.5f)) ImpactTarget();
+                else StartStraightFlight();
+                return;
+            }
+
             ticksUntilRepath--;
             if (ticksUntilRepath <= 0 || destinationPawn.Position != lastDestinationCell)
             {
                 if (!TryRepath())
                 {
-                    PierceOrGetStuck();
+                    StartStraightFlight();
                     return;
                 }
             }
 
-            if (MoveAlongPath()) ImpactTarget();
+            MoveAlongPath();
+            if (Destroyed) return;
+            if (pathCells.Count == 0 && Position.InHorDistOf(destinationPawn.Position, 1.5f)) ImpactTarget();
         }
 
         /// <summary>
@@ -140,16 +162,9 @@ namespace Gungnir
             }
 
             pathCells.Clear();
-            bool isStartCell = true;
-            while (path.NodesLeftCount > 0)
+            for (int nodesAhead = 1; nodesAhead < path.NodesLeftCount; nodesAhead++)
             {
-                IntVec3 pathCell = path.ConsumeNextNode();
-                if (isStartCell)
-                {
-                    isStartCell = false;
-                    continue;
-                }
-                pathCells.Add(pathCell);
+                pathCells.Add(path.Peek(nodesAhead));
             }
 
             path.ReleaseToPool();
@@ -159,7 +174,7 @@ namespace Gungnir
         /// <summary>
         /// Moves along the path this tick. Returns true when the destination's cell has been reached.
         /// </summary>
-        private bool MoveAlongPath()
+        private void MoveAlongPath()
         {
             float movementLeft = CellsPerTick;
             while (movementLeft > 0f && pathCells.Count > 0)
@@ -175,6 +190,8 @@ namespace Gungnir
                 {
                     exactPosition = nextCellCenter;
                     movementLeft -= distanceToNextCell;
+                    OnEnteredCell(pathCells[0]);
+                    if (Destroyed) return;
                     pathCells.RemoveAt(0);
                 }
                 else
@@ -186,48 +203,93 @@ namespace Gungnir
 
             IntVec3 currentCell = exactPosition.ToIntVec3();
             if (currentCell != Position) Position = currentCell;
-
-            return pathCells.Count == 0 && Position.InHorDistOf(destinationPawn.Position, 1.5f);
         }
 
         /// <summary>
-        /// No route exists: fly straight at the target and hit the first wall in the way.
-        /// If the cell behind it is open, punch through and keep hunting; if it's another wall, get stuck in this one.
+        /// Called each time Gungnir reaches a cell on its path.
         /// </summary>
-        private void PierceOrGetStuck()
+        private void OnEnteredCell(IntVec3 cell)
         {
-            for (int pierceCount = 0; pierceCount < MaximumPiercesPerAttempt; pierceCount++)
+            if (mode != GungnirFlightMode.Throw) return;
+
+            Building_Door door = cell.GetDoor(Map);
+            if (door != null && !door.Open) door.TakeDamage(MakeGungnirDamage(travelAngle));
+        }
+
+        /// <summary>
+        /// No route exists: fly straight at the target. If a wall is in the way, fly up to it; ResolveWallHit decides what happens there.
+        /// </summary>
+        private void StartStraightFlight()
+        {
+            List<IntVec3> lineCells = LineStrike.CellsOnLine(Position, destinationPawn.Position);
+            int wallIndex = lineCells.FindIndex(cell => LineStrike.GetBlocker(cell, Map) != null);
+
+            isFlyingStraight = true;
+            chargeWallCell = wallIndex >= 0 ? lineCells[wallIndex] : IntVec3.Invalid;
+            pathCells = wallIndex >= 0 ? lineCells.GetRange(0, wallIndex) : lineCells;
+        }
+
+        /// <summary>
+        /// The straight flight reached its wall: hit it, then punch through if the target's side is open, or get stuck if it's another wall.
+        /// </summary>
+        private void ResolveWallHit()
+        {
+            isFlyingStraight = false;
+            IntVec3 wallCell = chargeWallCell;
+            chargeWallCell = IntVec3.Invalid;
+
+            Building wall = LineStrike.GetBlocker(wallCell, Map);
+            if (wall != null)
             {
-                List<IntVec3> lineCells = LineStrike.CellsOnLine(Position, destinationPawn.Position);
-                int wallIndex = lineCells.FindIndex(cell => LineStrike.GetBlocker(cell, Map) != null);
-                if (wallIndex < 0)
-                {
-                    ImpactTarget();
-                    return;
-                }
-
-                IntVec3 wallCell = lineCells[wallIndex];
                 travelAngle = (wallCell - Position).AngleFlat;
-                LineStrike.GetBlocker(wallCell, Map).TakeDamage(MakeGungnirDamage(travelAngle));
-
-                bool hasCellBehindWall = wallIndex + 1 < lineCells.Count;
-                IntVec3 cellBehindWall = hasCellBehindWall ? lineCells[wallIndex + 1] : IntVec3.Invalid;
-                bool wallWasDestroyed = LineStrike.GetBlocker(wallCell, Map) == null;
-                bool cellBehindIsOpen = hasCellBehindWall && LineStrike.GetBlocker(cellBehindWall, Map) == null && cellBehindWall.Walkable(Map);
-
-                if (!wallWasDestroyed && !cellBehindIsOpen)
-                {
-                    stuckWallCell = wallCell;
-                    MoveTo(wallIndex > 0 ? lineCells[wallIndex - 1] : Position);
-                    mode = GungnirFlightMode.Stuck;
-                    return;
-                }
-
-                MoveTo(cellBehindIsOpen ? cellBehindWall : wallCell);
-                if (TryRepath()) return;
+                wall.TakeDamage(MakeGungnirDamage(travelAngle));
             }
 
-            DropGungnirHere();
+            if (wall == null || wall.Destroyed)
+            {
+                if (!TryRepath()) StartStraightFlight();
+                return;
+            }
+
+            if (TryFindCellBehindWall(wallCell, out IntVec3 cellBehindWall))
+            {
+                MoveTo(cellBehindWall);
+                if (!TryRepath()) StartStraightFlight();
+                return;
+            }
+
+            stuckWallCell = wallCell;
+            mode = GungnirFlightMode.Stuck;
+        }
+
+        /// <summary>
+        /// Finds the open cell on the target's side of a wall, stepping from the wall toward the target along x, z, or diagonally.
+        /// Returns false when every such cell is also blocked, i.e. the wall is more than one layer thick.
+        /// </summary>
+        private bool TryFindCellBehindWall(IntVec3 wallCell, out IntVec3 cellBehindWall)
+        {
+            IntVec3 towardTarget = destinationPawn.Position - wallCell;
+            int stepX = Math.Sign(towardTarget.x);
+            int stepZ = Math.Sign(towardTarget.z);
+
+            List<IntVec3> candidateCells = new List<IntVec3>();
+            if (stepX != 0) candidateCells.Add(wallCell + new IntVec3(stepX, 0, 0));
+            if (stepZ != 0) candidateCells.Add(wallCell + new IntVec3(0, 0, stepZ));
+            if (stepX != 0 && stepZ != 0) candidateCells.Add(wallCell + new IntVec3(stepX, 0, stepZ));
+
+            cellBehindWall = IntVec3.Invalid;
+            float closestDistance = float.MaxValue;
+            foreach (IntVec3 candidateCell in candidateCells)
+            {
+                if (!candidateCell.InBounds(Map) || LineStrike.GetBlocker(candidateCell, Map) != null || !candidateCell.Walkable(Map)) continue;
+
+                float distanceToTarget = candidateCell.DistanceToSquared(destinationPawn.Position);
+                if (distanceToTarget >= closestDistance) continue;
+
+                closestDistance = distanceToTarget;
+                cellBehindWall = candidateCell;
+            }
+            return cellBehindWall.IsValid;
         }
 
         /// <summary>
@@ -246,7 +308,7 @@ namespace Gungnir
             if (LineStrike.GetBlocker(stuckWallCell, Map) != null) return;
 
             mode = GungnirFlightMode.Throw;
-            if (!TryRepath()) PierceOrGetStuck();
+            if (!TryRepath()) StartStraightFlight();
         }
 
         /// <summary>
@@ -333,6 +395,8 @@ namespace Gungnir
             Scribe_Values.Look(ref ticksUntilRepath, "ticksUntilRepath");
             Scribe_Values.Look(ref stuckWallCell, "stuckWallCell");
             Scribe_Collections.Look(ref pathCells, "pathCells", LookMode.Value);
+            Scribe_Values.Look(ref isFlyingStraight, "isFlyingStraight");
+            Scribe_Values.Look(ref chargeWallCell, "chargeWallCell", IntVec3.Invalid);
             if (Scribe.mode == LoadSaveMode.PostLoadInit && pathCells == null) pathCells = new List<IntVec3>();
         }
     }

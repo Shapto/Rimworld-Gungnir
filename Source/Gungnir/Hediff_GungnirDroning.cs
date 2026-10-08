@@ -110,5 +110,18 @@ namespace Gungnir
 
             heldGungnir.TryDrop(gungnir, pawn.PositionHeld, pawn.MapHeld, ThingPlaceMode.Near, out _);
         }
+
+        /// <summary>
+        /// temp
+        /// </summary>
+        public override void Notify_PawnDied(DamageInfo? dinfo, Hediff culprit = null)
+        {
+            base.Notify_PawnDied(dinfo, culprit);
+
+            Thing gungnir = LodgedGungnir;
+            if (gungnir == null || pawn.MapHeld == null) return;
+
+            heldGungnir.TryDrop(gungnir, pawn.PositionHeld, pawn.MapHeld, ThingPlaceMode.Near, out _);
+        }
     }
 }

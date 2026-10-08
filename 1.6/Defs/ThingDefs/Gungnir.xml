@@ -23,6 +23,8 @@
 		<thingSetMakerTags>
 			<li>RewardStandardLowFreq</li>
 		</thingSetMakerTags>
+		<burnableByRecipe>false</burnableByRecipe>
+		<tradeTags Inherit="False" />
 		<tradeability>None</tradeability>
 		<tools>
 			<li>
@@ -54,7 +56,12 @@
 				<armorPenetration>1.55</armorPenetration>
 			</li>
 		</tools>
-		<comps>
+		<comps Inherit="False">
+			<li Class="CompProperties_Forbiddable"/>
+			<li Class="CompProperties_EquippableAbility">
+				<abilityDef>Gungnir_Throw</abilityDef>
+			</li>
+			<li Class="CompProperties_Styleable"/>
 			<li Class="SingularityFramework.Relics.CompProperties_RelicAptitude">
 				<rejectsUnworthy>false</rejectsUnworthy>
 				<fullAptitudeRequirements>
@@ -85,9 +92,6 @@
 						<minimum>0.9</minimum>
 					</li>
 				</partialAptitudeRequirements>
-				<li Class="CompProperties_EquippableAbility">
-					<abilityDef>Gungnir_Throw</abilityDef>
-				</li>
 			</li>
 		</comps>
 		<equippedAngleOffset>-45</equippedAngleOffset>
