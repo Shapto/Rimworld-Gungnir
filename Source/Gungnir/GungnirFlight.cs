@@ -67,6 +67,8 @@ namespace Gungnir
         public bool IsReturning => mode == GungnirFlightMode.Return;
         public bool IsStuck => mode == GungnirFlightMode.Stuck;
 
+        public IntVec3 StuckWallCell => stuckWallCell;
+
         public override Vector3 DrawPos => exactPosition;
 
         /// <summary>
@@ -498,6 +500,20 @@ namespace Gungnir
             exactPosition.y = AltitudeLayer.Projectile.AltitudeFor();
             Position = cell;
             pathCells.Clear();
+        }
+
+        public Pawn Wielder => thrower;
+
+        /// <summary>
+        /// Pulls a stuck Gungnir out of its wall by hand. Returns it, held by nobody, and ends the flight.
+        /// </summary>
+        public Thing PullOutOfWall()
+        {
+            Thing gungnir = CarriedGungnir;
+            if (gungnir != null) carriedGungnir.Remove(gungnir);
+            GungnirUtility.RemoveOpenHand(thrower);
+            Destroy();
+            return gungnir;
         }
 
         protected override void DrawAt(Vector3 drawLocation, bool flip = false)

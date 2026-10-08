@@ -4,7 +4,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using UnityEngine;
 using Verse;
+using Verse.AI;
 
 namespace Gungnir
 {
@@ -57,6 +59,30 @@ namespace Gungnir
 
         public override string LabelInBrackets => Severity.ToStringPercent();
 
+        /// <summary>
+        /// An unworthy wielder impaled by their own catch gets a button to tear Gungnir out of themselves.
+        /// </summary>
+        public override IEnumerable<Gizmo> GetGizmos()
+        {
+            foreach (Gizmo baseGizmo in base.GetGizmos())
+                yield return baseGizmo;
+
+            if (pawn != wielder || LodgedGungnir == null || !pawn.IsColonistPlayerControlled) yield break;
+
+            Command_Action ripOutCommand = new Command_Action
+            {
+                defaultLabel = "Gungnir_RipOutLabel".Translate(),
+                defaultDesc = "Gungnir_RipOutDescription".Translate(),
+                icon = GungnirTextures.RipOutIcon,
+                action = () => pawn.jobs.TryTakeOrderedJob(JobMaker.MakeJob(GungnirDefOf.Gungnir_RipOut, pawn), JobTag.Misc)
+            };
+            if (!pawn.health.capacities.CapableOf(PawnCapacityDefOf.Manipulation)) ripOutCommand.Disable("Gungnir_RipOutNoHands".Translate());
+            else if (pawn.Downed) ripOutCommand.Disable("Gungnir_RipOutDowned".Translate());
+            else if (pawn.CurJobDef == GungnirDefOf.Gungnir_RipOut) ripOutCommand.Disable("Gungnir_RipOutAlready".Translate());
+
+            yield return ripOutCommand;
+        }
+
         public override HediffStage CurStage
         {
             get
@@ -99,17 +125,17 @@ namespace Gungnir
         }
 
         /// <summary>
-        /// Tears Gungnir out for a recall. The lodged part takes the leaving spike, multiplied by the pawn's kinds of current harm
-        /// and amplified by droning (still present while the hit lands). Droning ends with it. Returns Gungnir, held by nobody.
+        /// Tears Gungnir out of this pawn. The lodged part takes the leaving spike, amplified by droning (still present while the hit lands);
+        /// a recall also adds +50% per kind of current harm. Droning ends with it. Returns Gungnir, held by nobody.
         /// </summary>
-        public Thing RipOutForRecall()
+        public Thing TearOut(bool isRecall)
         {
             Thing gungnir = LodgedGungnir;
             if (gungnir == null) return null;
 
             heldGungnir.Remove(gungnir);
 
-            float leavingDamage = GungnirUtility.GungnirDamage * GungnirUtility.NegativeEffectFactor(pawn);
+            float leavingDamage = isRecall ? GungnirUtility.GungnirDamage * GungnirUtility.NegativeEffectFactor(pawn) : GungnirUtility.GungnirDamage;
             BodyPartRecord lodgedPart = Part != null && !pawn.health.hediffSet.PartIsMissing(Part) ? Part : null;
             float leavingAngle = wielder != null ? (wielder.Position - pawn.Position).AngleFlat : 0f;
             pawn.TakeDamage(GungnirUtility.MakeGungnirDamage(wielder, leavingAngle, leavingDamage, lodgedPart));

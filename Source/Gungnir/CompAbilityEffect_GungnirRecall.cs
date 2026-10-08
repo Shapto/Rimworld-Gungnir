@@ -46,7 +46,7 @@ namespace Gungnir
 
                 IntVec3 startCell = impaledPawn.PositionHeld;
                 Map map = impaledPawn.MapHeld;
-                Thing gungnir = droning.RipOutForRecall();
+                Thing gungnir = droning.TearOut(true);
                 GungnirFlight.SendHome(gungnir, wielder, startCell, map, impaledPawn);
             }
         }
@@ -54,6 +54,12 @@ namespace Gungnir
         public override bool GizmoDisabled(out string reason)
         {
             Thing location = GungnirLocation;
+
+            if (!parent.pawn.health.capacities.CapableOf(PawnCapacityDefOf.Manipulation))
+            {
+                reason = "Gungnir_RecallNoHands".Translate();
+                return true;
+            }
 
             if (location == null || location.Destroyed)
             {

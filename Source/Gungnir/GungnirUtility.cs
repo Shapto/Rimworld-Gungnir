@@ -20,6 +20,12 @@ namespace Gungnir
         private const float MaximumNegativeEffectBonus = 2f;
 
         /// <summary>
+        /// True if the wielder could catch Gungnir on this map right now: alive, awake, and here.
+        /// When false, the wielder counts as gone, and colonists may rip Gungnir out themselves.
+        /// </summary>
+        public static bool WielderCanCatch(Pawn wielder, Map map) => wielder != null && !wielder.Dead && !wielder.Downed && wielder.Spawned && wielder.Map == map && wielder.health.capacities.CapableOf(PawnCapacityDefOf.Manipulation);
+
+        /// <summary>
         /// A stab from Gungnir's speartip, credited to its wielder. Optionally aimed at one body part.
         /// </summary>
         public static DamageInfo MakeGungnirDamage(Pawn instigator, float hitAngle, float damageAmount = GungnirDamage, BodyPartRecord hitPart = null)

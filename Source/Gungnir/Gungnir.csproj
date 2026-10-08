@@ -71,12 +71,15 @@
   <ItemGroup>
     <Compile Include="CompAbilityEffect_GungnirRecall.cs" />
     <Compile Include="CompAbilityEffect_GungnirThrow.cs" />
+    <Compile Include="FloatMenuOptionProvider_RipOutGungnir.cs" />
     <Compile Include="GungnirDefOf.cs" />
     <Compile Include="GungnirFlight.cs" />
     <Compile Include="GungnirMod.cs" />
+    <Compile Include="GungnirTextures.cs" />
     <Compile Include="GungnirUtility.cs" />
     <Compile Include="Hediff_GungnirDroning.cs" />
     <Compile Include="Hediff_GungnirOpenHand.cs" />
+    <Compile Include="JobDriver_RipOutGungnir.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
