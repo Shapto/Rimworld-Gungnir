@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+	<AbilityDef>
+		<defName>Gungnir_Throw</defName>
+		<label>Harpoon Throw</label>
+		<description>This throw will strike and pierce through without fail.</description>
+		<iconPath>UI/Gungnir_Throw</iconPath>
+		<disableGizmoWhileUndrafted>true</disableGizmoWhileUndrafted>
+		<verbProperties>
+			<verbClass>Verb_CastAbility</verbClass>
+			<range>24.9</range>
+			<warmupTime>0.5</warmupTime>
+			<requireLineOfSight>false</requireLineOfSight>
+			<targetParams>
+				<canTargetPawns>true</canTargetPawns>
+				<canTargetBuildings>false</canTargetBuildings>
+				<canTargetLocations>false</canTargetLocations>
+			</targetParams>
+		</verbProperties>
+		<comps>
+			<li Class="Gungnir.CompProperties_AbilityGungnirThrow" />
+		</comps>
+	</AbilityDef>
+</Defs>

@@ -57,8 +57,51 @@
 		<comps>
 			<li Class="SingularityFramework.Relics.CompProperties_RelicAptitude">
 				<rejectsUnworthy>false</rejectsUnworthy>
+				<fullAptitudeRequirements>
+					<li Class="SingularityFramework.Relics.AptitudeRequirement_Skill">
+						<skill>Melee</skill>
+						<minimum>18</minimum>
+					</li>
+					<li Class="SingularityFramework.Relics.AptitudeRequirement_Stat">
+						<stat>MoveSpeed</stat>
+						<minimum>5.5</minimum>
+					</li>
+					<li Class="SingularityFramework.Relics.AptitudeRequirement_Capacity">
+						<capacity>Manipulation</capacity>
+						<minimum>1.25</minimum>
+					</li>
+				</fullAptitudeRequirements>
+				<partialAptitudeRequirements>
+					<li Class="SingularityFramework.Relics.AptitudeRequirement_Skill">
+						<skill>Melee</skill>
+						<minimum>10</minimum>
+					</li>
+					<li Class="SingularityFramework.Relics.AptitudeRequirement_Stat">
+						<stat>MoveSpeed</stat>
+						<minimum>4.6</minimum>
+					</li>
+					<li Class="SingularityFramework.Relics.AptitudeRequirement_Capacity">
+						<capacity>Manipulation</capacity>
+						<minimum>0.9</minimum>
+					</li>
+				</partialAptitudeRequirements>
+				<li Class="CompProperties_EquippableAbility">
+					<abilityDef>Gungnir_Throw</abilityDef>
+				</li>
 			</li>
 		</comps>
 		<equippedAngleOffset>-45</equippedAngleOffset>
+	</ThingDef>
+
+	<ThingDef>
+		<defName>Gungnir_Flight</defName>
+		<label>Gungnir</label>
+		<thingClass>Gungnir.GungnirFlight</thingClass>
+		<category>Projectile</category>
+		<tickerType>Normal</tickerType>
+		<altitudeLayer>Projectile</altitudeLayer>
+		<drawerType>RealtimeOnly</drawerType>
+		<useHitPoints>false</useHitPoints>
+		<neverMultiSelect>true</neverMultiSelect>
 	</ThingDef>
 </Defs>
