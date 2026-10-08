@@ -3,7 +3,7 @@
 	<HediffDef>
 		<defName>Gungnir_Droning</defName>
 		<label>nested harpoon</label>
-		<description>Those impaled by Gungnir are pulverized as successive strikes amplify its droning force.</description>
+		<description>This person has been impaled by Gungnir! Successive strikes will amplify the spear's vibrating force and pulverize them.</description>
 		<hediffClass>Gungnir.Hediff_GungnirDroning</hediffClass>
 		<defaultLabelColor>(0.95, 0.8, 0.2)</defaultLabelColor>
 		<isBad>true</isBad>
@@ -32,7 +32,7 @@
 	<HediffDef>
 		<defName>Gungnir_OpenHand</defName>
 		<label>open hand</label>
-		<description>Gungnir has left this hand. It will return to it, whether or not the hand can stop it.</description>
+		<description>Gungnir has left this person's hand, though they can still feel its buzzing. The spear will return on their behest.</description>
 		<hediffClass>Gungnir.Hediff_GungnirOpenHand</hediffClass>
 		<isBad>false</isBad>
 		<defaultLabelColor>(0.95, 0.8, 0.2)</defaultLabelColor>
@@ -46,7 +46,7 @@
 	<HediffDef>
 		<defName>Gungnir_Reverberation</defName>
 		<label>reverberation</label>
-		<description>This arm stopped Gungnir mid-flight and is still reeling from the impact.</description>
+		<description>A debilitating buzzing deep in the bones of the arm, caused by catching Gungnir mid-flight.</description>
 		<hediffClass>HediffWithComps</hediffClass>
 		<defaultLabelColor>(0.95, 0.8, 0.2)</defaultLabelColor>
 		<isBad>true</isBad>
