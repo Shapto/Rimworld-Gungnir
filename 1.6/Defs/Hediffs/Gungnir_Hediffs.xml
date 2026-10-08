@@ -46,7 +46,7 @@
 	<HediffDef>
 		<defName>Gungnir_Reverberation</defName>
 		<label>reverberation</label>
-		<description>A debilitating reverberates through the arm's corpus, caused by catching Gungnir mid-flight.</description>
+		<description>A debilitating sting reverberates through the arm's corpus, caused by catching Gungnir mid-flight.</description>
 		<hediffClass>HediffWithComps</hediffClass>
 		<defaultLabelColor>(0.95, 0.8, 0.2)</defaultLabelColor>
 		<isBad>true</isBad>
