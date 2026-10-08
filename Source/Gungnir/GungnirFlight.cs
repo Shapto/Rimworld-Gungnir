@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 using Verse;
 using Verse.AI;
+using Verse.Noise;
 
 namespace Gungnir
 {
@@ -21,7 +22,6 @@ namespace Gungnir
 
     /// <summary>
     /// Gungnir in the air. Carries the weapon itself, follows a path to its destination pawn and re-paths when they move.
-    /// Throw mode hits only its target; Return mode (step 4) comes home through everything.
     /// </summary>
     public class GungnirFlight : Thing, IThingHolder
     {
@@ -53,6 +53,13 @@ namespace Gungnir
         /// </summary>
         private bool isFlyingStraight;
 
+        private GungnirFlightMode modeBeforeStuck;
+
+        /// <summary>
+        /// True for a flight heading home, including one that's stuck in a wall on its way.
+        /// </summary>
+        private bool IsReturnFlight => mode == GungnirFlightMode.Return || (mode == GungnirFlightMode.Stuck && modeBeforeStuck == GungnirFlightMode.Return);
+
         /// <summary>
         /// The wall the straight flight is charging at, or invalid if the line to the target is clear.
         /// </summary>
@@ -74,7 +81,7 @@ namespace Gungnir
         /// <summary>
         /// True while the destination pawn can still be flown to: alive, spawned and on this map.
         /// </summary>
-        private bool DestinationIsValid => destinationPawn != null && !destinationPawn.Dead && destinationPawn.Spawned && destinationPawn.Map == Map && !(IsReturning && destinationPawn.Downed);
+        private bool DestinationIsValid => destinationPawn != null && !destinationPawn.Dead && destinationPawn.Spawned && destinationPawn.Map == Map && !(IsReturnFlight && destinationPawn.Downed);
 
         /// <summary>
         /// Things the return flight has already hit, so each takes Gungnir's hit only once per trip.
@@ -110,7 +117,7 @@ namespace Gungnir
         {
             if (gungnir == null || map == null) return;
 
-            bool wielderCanCatch = wielder != null && !wielder.Dead && !wielder.Downed && wielder.Spawned && wielder.Map == map;
+            bool wielderCanCatch = GungnirUtility.WielderCanCatch(wielder, map);
             if (!wielderCanCatch)
             {
                 GenPlace.TryPlaceThing(gungnir, startCell, map, ThingPlaceMode.Near);
@@ -148,8 +155,7 @@ namespace Gungnir
         /// </summary>
         private void ReturnOrDrop()
         {
-            bool throwerCanCatch = thrower != null && !thrower.Dead && !thrower.Downed && thrower.Spawned && thrower.Map == Map;
-            if (throwerCanCatch) BeginReturn(thrower);
+            if (GungnirUtility.WielderCanCatch(thrower, Map)) BeginReturn(thrower);
             else DropGungnirHere();
         }
 
@@ -267,7 +273,6 @@ namespace Gungnir
             lastDestinationCell = destinationPawn.Position;
             ticksUntilRepath = RepathIntervalTicks;
 
-            if (mode == GungnirFlightMode.Return) return TryFindPath(TraverseMode.PassDoors);
             return TryFindPath(TraverseMode.NoPassClosedDoors) || TryFindPath(TraverseMode.PassDoors);
         }
 
@@ -294,7 +299,7 @@ namespace Gungnir
         }
 
         /// <summary>
-        /// Moves along the path this tick. Returns true when the destination's cell has been reached.
+        /// Moves along the path this tick.
         /// </summary>
         private void MoveAlongPath()
         {
@@ -403,6 +408,7 @@ namespace Gungnir
             }
 
             stuckWallCell = wallCell;
+            modeBeforeStuck = mode;
             mode = GungnirFlightMode.Stuck;
         }
 
@@ -452,7 +458,7 @@ namespace Gungnir
 
             if (LineStrike.GetBlocker(stuckWallCell, Map) != null) return;
 
-            mode = GungnirFlightMode.Throw;
+            mode = modeBeforeStuck;
             if (!TryRepath()) StartStraightFlight();
         }
 
@@ -476,7 +482,7 @@ namespace Gungnir
         }
 
         /// <summary>
-        /// Ends the flight with Gungnir lying on the ground where it is. Temporary stand-in for Return mode.
+        /// Ends the flight with Gungnir lying on the ground where it is.
         /// </summary>
         private void DropGungnirHere()
         {
@@ -550,6 +556,7 @@ namespace Gungnir
             Scribe_Values.Look(ref isFlyingStraight, "isFlyingStraight");
             Scribe_Values.Look(ref chargeWallCell, "chargeWallCell", IntVec3.Invalid);
             Scribe_Collections.Look(ref alreadyHitThings, "alreadyHitThings", LookMode.Reference);
+            Scribe_Values.Look(ref modeBeforeStuck, "modeBeforeStuck");
             if (Scribe.mode == LoadSaveMode.PostLoadInit && alreadyHitThings == null) alreadyHitThings = new HashSet<Thing>();
             if (Scribe.mode == LoadSaveMode.PostLoadInit && pathCells == null) pathCells = new List<IntVec3>();
         }

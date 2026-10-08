@@ -9,7 +9,7 @@ using Verse;
 namespace Gungnir
 {
     /// <summary>
-    /// Whatever takes a pawn off the map (fleeing, caravans, pods, being carried, erasure), Gungnir doesn't go with them
+    /// Whatever takes a pawn off the map (fleeing, caravans, pods, erasure), Gungnir doesn't go with them
     /// it tears free just before and flies home, or drops if its wielder can't catch it.
     /// </summary>
     [HarmonyPatch(typeof(Pawn), nameof(Pawn.DeSpawn))]
