@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 using Verse;
 using Verse.AI;
+using Verse.Sound;
 
 namespace Gungnir
 {
@@ -134,7 +135,7 @@ namespace Gungnir
             if (gungnir == null) return null;
 
             heldGungnir.Remove(gungnir);
-
+            if (pawn.Spawned) GungnirDefOf.Gungnir_Leave.PlayOneShot(new TargetInfo(pawn.Position, pawn.Map));
             float leavingDamage = isRecall ? GungnirUtility.LeavingDamage * GungnirUtility.NegativeEffectFactor(pawn) : GungnirUtility.LeavingDamage;
             BodyPartRecord lodgedPart = Part != null && !pawn.health.hediffSet.PartIsMissing(Part) ? Part : null;
             float leavingAngle = wielder != null ? (wielder.Position - pawn.Position).AngleFlat : 0f;

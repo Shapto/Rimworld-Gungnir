@@ -20,6 +20,10 @@ namespace Gungnir
         public static HediffDef Gungnir_OpenHand;
         public static HediffDef Gungnir_Reverberation;
         public static JobDef Gungnir_RipOut;
+        public static SoundDef Gungnir_Impact;
+        public static SoundDef Gungnir_Pierce;
+        public static SoundDef Gungnir_Leave;
+        public static SoundDef Gungnir_Catch;
         static GungnirDefOf() => DefOfHelper.EnsureInitializedInCtor(typeof(GungnirDefOf));
     }
 }

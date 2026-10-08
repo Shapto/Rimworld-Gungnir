@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+
+  <SoundDef>
+    <defName>Gungnir_Throw</defName>
+    <context>MapOnly</context>
+    <maxSimultaneous>2</maxSimultaneous>
+    <subSounds>
+      <li>
+        <grains>
+          <li Class="AudioGrain_Clip">
+			 <clipPath>Gungnir_Throw</clipPath>
+          </li>
+        </grains>
+        <volumeRange>45~50</volumeRange>
+        <pitchRange>0.97~1.03</pitchRange>
+        <paramMappings>
+          <li>
+            <inParam Class="SoundParamSource_CameraAltitude" />
+            <outParam Class="SoundParamTarget_Volume" />
+            <curve>
+              <points>
+                <li>(15, 1)</li>
+                <li>(40, 0.4)</li>
+                <li>(65, 0)</li>
+              </points>
+            </curve>
+          </li>
+        </paramMappings>
+      </li>
+    </subSounds>
+  </SoundDef>
+
+  <SoundDef>
+    <defName>Gungnir_Impact</defName>
+    <context>MapOnly</context>
+    <maxSimultaneous>2</maxSimultaneous>
+    <subSounds>
+      <li>
+        <grains>
+          <li Class="AudioGrain_Clip">
+			<clipPath>Gungnir_Impact</clipPath>
+          </li>
+        </grains>
+        <volumeRange>55~60</volumeRange>
+        <pitchRange>0.95~1.05</pitchRange>
+        <paramMappings>
+          <li>
+            <inParam Class="SoundParamSource_CameraAltitude" />
+            <outParam Class="SoundParamTarget_Volume" />
+            <curve>
+              <points>
+                <li>(15, 1)</li>
+                <li>(40, 0.4)</li>
+                <li>(65, 0)</li>
+              </points>
+            </curve>
+          </li>
+        </paramMappings>
+      </li>
+    </subSounds>
+  </SoundDef>
+
+  <SoundDef>
+    <defName>Gungnir_Pierce</defName>
+    <context>MapOnly</context>
+    <maxSimultaneous>2</maxSimultaneous>
+    <subSounds>
+      <li>
+        <grains>
+          <li Class="AudioGrain_Clip">
+			<clipPath>Gungnir_Pierce</clipPath>
+          </li>
+        </grains>
+        <volumeRange>50~55</volumeRange>
+        <pitchRange>0.95~1.05</pitchRange>
+        <paramMappings>
+          <li>
+            <inParam Class="SoundParamSource_CameraAltitude" />
+            <outParam Class="SoundParamTarget_Volume" />
+            <curve>
+              <points>
+                <li>(15, 1)</li>
+                <li>(40, 0.4)</li>
+                <li>(65, 0)</li>
+              </points>
+            </curve>
+          </li>
+        </paramMappings>
+      </li>
+    </subSounds>
+  </SoundDef>
+
+  <SoundDef>
+    <defName>Gungnir_Leave</defName>
+    <context>MapOnly</context>
+    <maxSimultaneous>2</maxSimultaneous>
+    <subSounds>
+      <li>
+        <grains>
+          <li Class="AudioGrain_Clip">
+			<clipPath>Gungnir_Leave</clipPath>
+          </li>
+        </grains>
+        <volumeRange>45~50</volumeRange>
+        <pitchRange>0.97~1.03</pitchRange>
+        <paramMappings>
+          <li>
+            <inParam Class="SoundParamSource_CameraAltitude" />
+            <outParam Class="SoundParamTarget_Volume" />
+            <curve>
+              <points>
+                <li>(15, 1)</li>
+                <li>(40, 0.4)</li>
+                <li>(65, 0)</li>
+              </points>
+            </curve>
+          </li>
+        </paramMappings>
+      </li>
+    </subSounds>
+  </SoundDef>
+
+  <SoundDef>
+    <defName>Gungnir_Recall</defName>
+    <context>MapOnly</context>
+    <maxSimultaneous>1</maxSimultaneous>
+    <subSounds>
+      <li>
+        <grains>
+          <li Class="AudioGrain_Clip">
+	        <clipPath>Gungnir_Recall</clipPath>
+          </li>
+        </grains>
+        <volumeRange>45~50</volumeRange>
+        <paramMappings>
+          <li>
+            <inParam Class="SoundParamSource_CameraAltitude" />
+            <outParam Class="SoundParamTarget_Volume" />
+            <curve>
+              <points>
+                <li>(15, 1)</li>
+                <li>(40, 0.4)</li>
+                <li>(65, 0)</li>
+              </points>
+            </curve>
+          </li>
+        </paramMappings>
+      </li>
+    </subSounds>
+  </SoundDef>
+
+  <SoundDef>
+    <defName>Gungnir_Catch</defName>
+    <context>MapOnly</context>
+    <maxSimultaneous>1</maxSimultaneous>
+    <subSounds>
+      <li>
+        <grains>
+          <li Class="AudioGrain_Clip">
+			 <clipPath>Gungnir_Catch</clipPath>
+          </li>
+        </grains>
+        <volumeRange>45~50</volumeRange>
+        <pitchRange>0.98~1.02</pitchRange>
+        <paramMappings>
+          <li>
+            <inParam Class="SoundParamSource_CameraAltitude" />
+            <outParam Class="SoundParamTarget_Volume" />
+            <curve>
+              <points>
+                <li>(15, 1)</li>
+                <li>(40, 0.4)</li>
+                <li>(65, 0)</li>
+              </points>
+            </curve>
+          </li>
+        </paramMappings>
+      </li>
+    </subSounds>
+  </SoundDef>
+
+</Defs>

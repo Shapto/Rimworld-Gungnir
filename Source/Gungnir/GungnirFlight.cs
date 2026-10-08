@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 using Verse;
+using Verse.Sound;
 
 namespace Gungnir
 {
@@ -353,7 +354,7 @@ namespace Gungnir
                 SlamIntoWielder();
                 return;
             }
-
+            GungnirDefOf.Gungnir_Catch.PlayOneShot(new TargetInfo(destinationPawn.Position, Map));
             carriedGungnir.Remove(gungnir);
             GungnirUtility.RemoveOpenHand(destinationPawn);
 
@@ -375,6 +376,7 @@ namespace Gungnir
         /// </summary>
         private bool TryImpaleAndLodge(Pawn victim)
         {
+            GungnirDefOf.Gungnir_Impact.PlayOneShot(new TargetInfo(victim.Position, victim.Map));
             DamageWorker.DamageResult damageResult = victim.TakeDamage(MakeGungnirDamage(travelAngle));
             BodyPartRecord hitPart = damageResult.LastHitPart;
             if (victim.Dead || hitPart == null || victim.health.hediffSet.PartIsMissing(hitPart)) return false;
@@ -551,17 +553,20 @@ namespace Gungnir
 
             if (wall == null || wall.Destroyed)
             {
+                if (wall != null) GungnirDefOf.Gungnir_Pierce.PlayOneShot(new TargetInfo(wallCell, Map));
                 if (!TryRepath()) StartStraightFlight();
                 return;
             }
 
             if (TryFindCellBehindWall(wallCell, out IntVec3 cellBehindWall))
             {
+                GungnirDefOf.Gungnir_Pierce.PlayOneShot(new TargetInfo(wallCell, Map));
                 MoveTo(cellBehindWall);
                 if (!TryRepath()) StartStraightFlight();
                 return;
             }
 
+            GungnirDefOf.Gungnir_Impact.PlayOneShot(new TargetInfo(wallCell, Map));
             stuckWallCell = wallCell;
             modeBeforeStuck = mode;
             mode = GungnirFlightMode.Stuck;
