@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LanguageData>
+  <Gungnir_LocationLodged>Gungnir is lodged in {0}.</Gungnir_LocationLodged>
+  <Gungnir_LocationStuck>Gungnir is stuck in a wall.</Gungnir_LocationStuck>
+  <Gungnir_LocationReturning>Gungnir is returning.</Gungnir_LocationReturning>
+  <Gungnir_LocationInFlight>Gungnir is in flight.</Gungnir_LocationInFlight>
+  <Gungnir_RecallNowhere>Gungnir has nowhere to return from.</Gungnir_RecallNowhere>
+  <Gungnir_RecallOtherMap>Gungnir is on another map.</Gungnir_RecallOtherMap>
+  <Gungnir_RecallAlreadyReturning>Gungnir is already returning.</Gungnir_RecallAlreadyReturning>
+  <Gungnir_RecallLodgedInSelf>Gungnir is lodged in this pawn. It has to be ripped out.</Gungnir_RecallLodgedInSelf>
+</LanguageData>

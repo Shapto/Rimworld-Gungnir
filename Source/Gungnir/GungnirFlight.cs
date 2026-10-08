@@ -1,5 +1,6 @@
 ﻿using RimWorld;
 using SingularityFramework.Geometry;
+using SingularityFramework.Relics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,12 +25,11 @@ namespace Gungnir
     /// </summary>
     public class GungnirFlight : Thing, IThingHolder
     {
-        private const float CellsPerTick = 0.8f;
+        private const float CellsPerTick = 0.5f;
         private const int RepathIntervalTicks = 10;
         private const int StuckCheckIntervalTicks = 15;
-        private const float ThrowDamage = 48f;
-        private const float ThrowArmorPenetration = 1.6f;
         private const int ThrowStunTicks = 120;
+        private const int PartialCatchStunTicks = 60;
 
         /// <summary>
         /// Which way the spearhead points in the texture, in degrees clockwise from straight up. Tweak until the tip leads in flight.
@@ -64,13 +64,20 @@ namespace Gungnir
         }
 
         public Thing CarriedGungnir => carriedGungnir.Count > 0 ? carriedGungnir[0] : null;
+        public bool IsReturning => mode == GungnirFlightMode.Return;
+        public bool IsStuck => mode == GungnirFlightMode.Stuck;
 
         public override Vector3 DrawPos => exactPosition;
 
         /// <summary>
         /// True while the destination pawn can still be flown to: alive, spawned and on this map.
         /// </summary>
-        private bool DestinationIsValid => destinationPawn != null && !destinationPawn.Dead && destinationPawn.Spawned && destinationPawn.Map == Map;
+        private bool DestinationIsValid => destinationPawn != null && !destinationPawn.Dead && destinationPawn.Spawned && destinationPawn.Map == Map && !(IsReturning && destinationPawn.Downed);
+
+        /// <summary>
+        /// Things the return flight has already hit, so each takes Gungnir's hit only once per trip.
+        /// </summary>
+        private HashSet<Thing> alreadyHitThings = new HashSet<Thing>();
 
         /// <summary>
         /// Takes Gungnir out of the thrower's hands and starts a flight at the target.
@@ -88,9 +95,60 @@ namespace Gungnir
             flight.exactPosition = thrower.DrawPos;
             flight.exactPosition.y = AltitudeLayer.Projectile.AltitudeFor();
             GenSpawn.Spawn(flight, thrower.Position, thrower.Map);
+            GungnirUtility.SetGungnirLocation(thrower, flight);
 
             if (!flight.TryRepath()) flight.StartStraightFlight();
             return flight;
+        }
+
+        /// <summary>
+        /// Sends a freed Gungnir back to its wielder from the given cell. If the wielder can't catch it (gone, downed, other map), it drops there instead.
+        /// </summary>
+        public static void SendHome(Thing gungnir, Pawn wielder, IntVec3 startCell, Map map, Thing alreadyHit = null)
+        {
+            if (gungnir == null || map == null) return;
+
+            bool wielderCanCatch = wielder != null && !wielder.Dead && !wielder.Downed && wielder.Spawned && wielder.Map == map;
+            if (!wielderCanCatch)
+            {
+                GenPlace.TryPlaceThing(gungnir, startCell, map, ThingPlaceMode.Near);
+                GungnirUtility.RemoveOpenHand(wielder);
+                return;
+            }
+
+            GungnirFlight flight = (GungnirFlight)ThingMaker.MakeThing(GungnirDefOf.Gungnir_Flight);
+            flight.thrower = wielder;
+            flight.carriedGungnir.TryAdd(gungnir);
+            flight.exactPosition = startCell.ToVector3Shifted();
+            flight.exactPosition.y = AltitudeLayer.Projectile.AltitudeFor();
+            GenSpawn.Spawn(flight, startCell, map);
+            if (alreadyHit != null) flight.alreadyHitThings.Add(alreadyHit);
+            flight.BeginReturn(wielder);
+        }
+
+        /// <summary>
+        /// Turns this flight into a return to the wielder, from wherever it is: in the air or stuck in a wall.
+        /// </summary>
+        public void BeginReturn(Pawn wielder)
+        {
+            thrower = wielder;
+            destinationPawn = wielder;
+            mode = GungnirFlightMode.Return;
+            isFlyingStraight = false;
+            chargeWallCell = IntVec3.Invalid;
+            GungnirUtility.SetGungnirLocation(wielder, this);
+
+            if (!TryRepath()) StartStraightFlight();
+        }
+
+        /// <summary>
+        /// A throw that can't finish (its target died or left, or the hit destroyed the part) comes home, or drops if nobody can catch it.
+        /// </summary>
+        private void ReturnOrDrop()
+        {
+            bool throwerCanCatch = thrower != null && !thrower.Dead && !thrower.Downed && thrower.Spawned && thrower.Map == Map;
+            if (throwerCanCatch) BeginReturn(thrower);
+            else DropGungnirHere();
         }
 
         protected override void Tick()
@@ -106,7 +164,8 @@ namespace Gungnir
 
             if (!DestinationIsValid)
             {
-                DropGungnirHere();
+                if (IsReturning) DropGungnirHere();
+                else ReturnOrDrop();
                 return;
             }
 
@@ -116,7 +175,7 @@ namespace Gungnir
                 if (Destroyed || pathCells.Count > 0) return;
 
                 if (chargeWallCell.IsValid) ResolveWallHit();
-                else if (Position.InHorDistOf(destinationPawn.Position, 1.5f)) ImpactTarget();
+                else if (Position.InHorDistOf(destinationPawn.Position, 1.5f)) ArriveAtDestination();
                 else StartStraightFlight();
                 return;
             }
@@ -133,7 +192,68 @@ namespace Gungnir
 
             MoveAlongPath();
             if (Destroyed) return;
-            if (pathCells.Count == 0 && Position.InHorDistOf(destinationPawn.Position, 1.5f)) ImpactTarget();
+            if (pathCells.Count == 0 && Position.InHorDistOf(destinationPawn.Position, 1.5f)) ArriveAtDestination();
+        }
+
+        /// <summary>
+        /// Reached the destination pawn: a throw hits its target, a return comes home to the wielder.
+        /// </summary>
+        private void ArriveAtDestination()
+        {
+            if (IsReturning) ArriveAtWielder();
+            else ImpactTarget();
+        }
+
+        /// <summary>
+        /// Gungnir reached its wielder, and their aptitude decides the catch.
+        /// Full: a clean catch. Partial: caught, but the impact stuns them for a second and leaves an arm reverberating.
+        /// Unworthy: they can't stop it, and it hits them like it would anyone else.
+        /// </summary>
+        private void ArriveAtWielder()
+        {
+            Thing gungnir = CarriedGungnir;
+            CompRelicAptitude aptitudeComp = gungnir.TryGetComp<CompRelicAptitude>();
+            AptitudeLevel aptitude = aptitudeComp != null ? RelicAptitude.GetAptitude(destinationPawn, aptitudeComp.Props, gungnir.def) : AptitudeLevel.Full;
+
+            if (aptitude == AptitudeLevel.Unworthy)
+            {
+                SlamIntoWielder();
+                return;
+            }
+
+            carriedGungnir.Remove(gungnir);
+            GungnirUtility.RemoveOpenHand(destinationPawn);
+
+            if (destinationPawn.equipment != null && destinationPawn.equipment.Primary == null) destinationPawn.equipment.AddEquipment((ThingWithComps)gungnir);
+            else GenPlace.TryPlaceThing(gungnir, destinationPawn.Position, Map, ThingPlaceMode.Near);
+
+            if (aptitude == AptitudeLevel.Partial)
+            {
+                destinationPawn.stances?.stunner.StunFor(PartialCatchStunTicks, null, false);
+                GungnirUtility.ApplyReverberation(destinationPawn);
+            }
+
+            Destroy();
+        }
+
+        /// <summary>
+        /// Gungnir hits this pawn, stuns them and lodges in the part it hit, with droning starting at the first stack.
+        /// Returns false, without lodging, if the hit killed them or destroyed the part.
+        /// </summary>
+        private bool TryImpaleAndLodge(Pawn victim)
+        {
+            DamageWorker.DamageResult damageResult = victim.TakeDamage(MakeGungnirDamage(travelAngle));
+            BodyPartRecord hitPart = damageResult.LastHitPart;
+            if (victim.Dead || hitPart == null || victim.health.hediffSet.PartIsMissing(hitPart)) return false;
+
+            victim.stances?.stunner.StunFor(ThrowStunTicks, thrower);
+
+            Hediff_GungnirDroning droning = (Hediff_GungnirDroning)HediffMaker.MakeHediff(GungnirDefOf.Gungnir_Droning, victim, hitPart);
+            victim.health.AddHediff(droning, hitPart);
+            droning.LodgeGungnir(CarriedGungnir, thrower);
+            droning.Severity = 0.01f;
+            GungnirUtility.SetGungnirLocation(thrower, victim);
+            return true;
         }
 
         /// <summary>
@@ -210,10 +330,32 @@ namespace Gungnir
         /// </summary>
         private void OnEnteredCell(IntVec3 cell)
         {
-            if (mode != GungnirFlightMode.Throw) return;
+            if (IsReturning)
+            {
+                HitEverythingInCell(cell);
+                return;
+            }
 
             Building_Door door = cell.GetDoor(Map);
             if (door != null && !door.Open) door.TakeDamage(MakeGungnirDamage(travelAngle));
+        }
+
+        /// <summary>
+        /// The return flight tears through this cell: every pawn, building, item and plant here takes Gungnir's hit, once per trip. The wielder is spared.
+        /// </summary>
+        private void HitEverythingInCell(IntVec3 cell)
+        {
+            foreach (Thing thing in cell.GetThingList(Map).ToList())
+            {
+                if (thing == this || thing == destinationPawn || thing.Destroyed) continue;
+                if (!(thing is Pawn) && !thing.def.useHitPoints) continue;
+
+                ThingCategory category = thing.def.category;
+                if (category == ThingCategory.Filth || category == ThingCategory.Mote || category == ThingCategory.Ethereal || category == ThingCategory.Projectile) continue;
+
+                if (!alreadyHitThings.Add(thing)) continue;
+                thing.TakeDamage(MakeGungnirDamage(travelAngle));
+            }
         }
 
         /// <summary>
@@ -301,7 +443,8 @@ namespace Gungnir
 
             if (!DestinationIsValid)
             {
-                DropGungnirHere();
+                if (IsReturning) DropGungnirHere();
+                else ReturnOrDrop();
                 return;
             }
 
@@ -312,27 +455,22 @@ namespace Gungnir
         }
 
         /// <summary>
-        /// The throw reached its target: damage, stun, and lodge in the part that was hit.
+        /// The throw reached its target: damage, stun, and lodge in the part that was hit. If it can't lodge, it comes home.
         /// </summary>
         private void ImpactTarget()
         {
-            DamageWorker.DamageResult damageResult = destinationPawn.TakeDamage(MakeGungnirDamage(travelAngle));
-            BodyPartRecord hitPart = damageResult.LastHitPart;
+            if (TryImpaleAndLodge(destinationPawn)) Destroy();
+            else ReturnOrDrop();
+        }
 
-            if (destinationPawn.Dead || hitPart == null || destinationPawn.health.hediffSet.PartIsMissing(hitPart))
-            {
-                DropGungnirHere();
-                return;
-            }
-
-            destinationPawn.stances?.stunner.StunFor(ThrowStunTicks, thrower);
-
-            Hediff_GungnirDroning droning = (Hediff_GungnirDroning)HediffMaker.MakeHediff(GungnirDefOf.Gungnir_Droning, destinationPawn, hitPart);
-            destinationPawn.health.AddHediff(droning, hitPart);
-            droning.LodgeGungnir(CarriedGungnir, thrower);
-            droning.Severity = 0.01f;
-
-            Destroy();
+        /// <summary>
+        /// An unworthy wielder couldn't stop Gungnir, so it hits them like it would anyone else and lodges in them.
+        /// If that hit kills them or destroys the part, it drops at their feet instead of looping back into another catch.
+        /// </summary>
+        private void SlamIntoWielder()
+        {
+            if (TryImpaleAndLodge(destinationPawn)) Destroy();
+            else DropGungnirHere();
         }
 
         /// <summary>
@@ -342,16 +480,14 @@ namespace Gungnir
         {
             Thing gungnir = CarriedGungnir;
             if (gungnir != null) carriedGungnir.TryDrop(gungnir, Position, Map, ThingPlaceMode.Near, out _);
+            GungnirUtility.RemoveOpenHand(thrower);
             Destroy();
         }
 
         /// <summary>
         /// Gungnir's own hit: a stab from the speartip, credited to the thrower.
         /// </summary>
-        private DamageInfo MakeGungnirDamage(float hitAngle)
-        {
-            return new DamageInfo(DamageDefOf.Stab, ThrowDamage, ThrowArmorPenetration, hitAngle, thrower, null, GungnirDefOf.Gungnir);
-        }
+        private DamageInfo MakeGungnirDamage(float hitAngle) => GungnirUtility.MakeGungnirDamage(thrower, hitAngle);
 
         /// <summary>
         /// Jumps straight to a cell, used when piercing a wall or getting stuck in front of one.
@@ -397,6 +533,8 @@ namespace Gungnir
             Scribe_Collections.Look(ref pathCells, "pathCells", LookMode.Value);
             Scribe_Values.Look(ref isFlyingStraight, "isFlyingStraight");
             Scribe_Values.Look(ref chargeWallCell, "chargeWallCell", IntVec3.Invalid);
+            Scribe_Collections.Look(ref alreadyHitThings, "alreadyHitThings", LookMode.Reference);
+            if (Scribe.mode == LoadSaveMode.PostLoadInit && alreadyHitThings == null) alreadyHitThings = new HashSet<Thing>();
             if (Scribe.mode == LoadSaveMode.PostLoadInit && pathCells == null) pathCells = new List<IntVec3>();
         }
     }

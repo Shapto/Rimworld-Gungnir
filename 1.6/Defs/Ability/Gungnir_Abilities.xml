@@ -21,4 +21,22 @@
 			<li Class="Gungnir.CompProperties_AbilityGungnirThrow" />
 		</comps>
 	</AbilityDef>
+	<AbilityDef>
+		<defName>Gungnir_Recall</defName>
+		<label>return to me.</label>
+		<description>Call Gungnir back. It tears free of whatever holds it and comes home through anything in its way.</description>
+		<iconPath>UI/Gungnir_Recall</iconPath>
+		<targetRequired>false</targetRequired>
+		<hostile>false</hostile>
+		<verbProperties>
+			<verbClass>Verb_CastAbility</verbClass>
+			<warmupTime>0.25</warmupTime>
+			<targetParams>
+				<canTargetSelf>true</canTargetSelf>
+			</targetParams>
+		</verbProperties>
+		<comps>
+			<li Class="Gungnir.CompProperties_AbilityGungnirRecall" />
+		</comps>
+	</AbilityDef>
 </Defs>

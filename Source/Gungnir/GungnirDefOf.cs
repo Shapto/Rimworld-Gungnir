@@ -17,7 +17,8 @@ namespace Gungnir
         public static ThingDef Gungnir;
         public static ThingDef Gungnir_Flight;
         public static HediffDef Gungnir_Droning;
-
+        public static HediffDef Gungnir_OpenHand;
+        public static HediffDef Gungnir_Reverberation;
         static GungnirDefOf() => DefOfHelper.EnsureInitializedInCtor(typeof(GungnirDefOf));
     }
 }

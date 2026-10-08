@@ -99,29 +99,61 @@ namespace Gungnir
         }
 
         /// <summary>
-        /// temp
+        /// Tears Gungnir out for a recall. The lodged part takes the leaving spike, multiplied by the pawn's kinds of current harm
+        /// and amplified by droning (still present while the hit lands). Droning ends with it. Returns Gungnir, held by nobody.
         /// </summary>
-        public override void PostRemoved()
+        public Thing RipOutForRecall()
         {
-            base.PostRemoved();
-
             Thing gungnir = LodgedGungnir;
-            if (gungnir == null || pawn.MapHeld == null) return;
+            if (gungnir == null) return null;
 
-            heldGungnir.TryDrop(gungnir, pawn.PositionHeld, pawn.MapHeld, ThingPlaceMode.Near, out _);
+            heldGungnir.Remove(gungnir);
+
+            float leavingDamage = GungnirUtility.GungnirDamage * GungnirUtility.NegativeEffectFactor(pawn);
+            BodyPartRecord lodgedPart = Part != null && !pawn.health.hediffSet.PartIsMissing(Part) ? Part : null;
+            float leavingAngle = wielder != null ? (wielder.Position - pawn.Position).AngleFlat : 0f;
+            pawn.TakeDamage(GungnirUtility.MakeGungnirDamage(wielder, leavingAngle, leavingDamage, lodgedPart));
+
+            if (pawn.health.hediffSet.hediffs.Contains(this)) pawn.health.RemoveHediff(this);
+            return gungnir;
         }
 
         /// <summary>
-        /// temp
+        /// The pawn died with Gungnir inside: it tears free and flies home on its own.
         /// </summary>
         public override void Notify_PawnDied(DamageInfo? dinfo, Hediff culprit = null)
         {
             base.Notify_PawnDied(dinfo, culprit);
+            ReleaseAndSendHome();
+        }
 
+        /// <summary>
+        /// Removed while Gungnir is still inside (the lodged part was destroyed, or dev mode): it flies home with no leaving damage.
+        /// </summary>
+        public override void PostRemoved()
+        {
+            base.PostRemoved();
+            ReleaseAndSendHome();
+        }
+
+        /// <summary>
+        /// Takes Gungnir out and sends it back to the wielder, or drops it if nobody can catch it.
+        /// </summary>
+        private void ReleaseAndSendHome()
+        {
             Thing gungnir = LodgedGungnir;
             if (gungnir == null || pawn.MapHeld == null) return;
 
-            heldGungnir.TryDrop(gungnir, pawn.PositionHeld, pawn.MapHeld, ThingPlaceMode.Near, out _);
+            heldGungnir.Remove(gungnir);
+
+            if (pawn == wielder)
+            {
+                GenPlace.TryPlaceThing(gungnir, pawn.PositionHeld, pawn.MapHeld, ThingPlaceMode.Near);
+                GungnirUtility.RemoveOpenHand(wielder);
+                return;
+            }
+
+            GungnirFlight.SendHome(gungnir, wielder, pawn.PositionHeld, pawn.MapHeld, pawn);
         }
     }
 }
