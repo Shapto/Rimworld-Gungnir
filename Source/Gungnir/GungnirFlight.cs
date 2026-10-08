@@ -8,8 +8,6 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 using Verse;
-using Verse.AI;
-using Verse.Noise;
 
 namespace Gungnir
 {
@@ -48,6 +46,14 @@ namespace Gungnir
         private int ticksUntilRepath;
         private IntVec3 stuckWallCell;
 
+        private const float MaximumTurnDegreesPerTick = 40f;
+
+        /// <summary>
+        /// The angle the spear is drawn at. Follows travelAngle at a capped turn speed, so sharp turns swing instead of snapping.
+        /// </summary>
+        private float drawAngle;
+        private bool hasDrawAngle;
+
         /// <summary>
         /// True while flying a straight line because no route exists, either at a wall to hit or straight at the target.
         /// </summary>
@@ -78,6 +84,14 @@ namespace Gungnir
 
         public override Vector3 DrawPos => exactPosition;
 
+        private const float MaximumStepLength = 0.5f;
+        private const float CornerRoundingDistance = 0.8f;
+
+        /// <summary>
+        /// Whether the current route is allowed through closed doors, so the steering safety check uses the same rule as the route.
+        /// </summary>
+        private bool pathAllowsDoors;
+
         /// <summary>
         /// True while the destination pawn can still be flown to: alive, spawned and on this map.
         /// </summary>
@@ -87,6 +101,117 @@ namespace Gungnir
         /// Things the return flight has already hit, so each takes Gungnir's hit only once per trip.
         /// </summary>
         private HashSet<Thing> alreadyHitThings = new HashSet<Thing>();
+
+        /// <summary>
+        /// The 8 directions Gungnir can fly from a cell. Straight ones first, so ties prefer straight lines.
+        /// </summary>
+        private static readonly IntVec3[] FlightDirections =
+        {
+            new IntVec3(0, 0, 1),
+            new IntVec3(1, 0, 0),
+            new IntVec3(0, 0, -1),
+            new IntVec3(-1, 0, 0),
+            new IntVec3(1, 0, 1),
+            new IntVec3(1, 0, -1),
+            new IntVec3(-1, 0, -1),
+            new IntVec3(-1, 0, 1)
+        };
+
+
+        /// <summary>
+        /// Spreads out from the start, cell by cell, until it reaches the goal, then traces the route back.
+        /// Returns the cells to fly through (start not included), or null if the goal can't be reached.
+        /// Diagonal steps can't squeeze between two blocked cells.
+        /// </summary>
+        private List<IntVec3> FindFlightCells(IntVec3 startCell, IntVec3 goalCell, bool doorsAllowed)
+        {
+            if (startCell == goalCell) return new List<IntVec3>();
+
+            Dictionary<IntVec3, IntVec3> cameFrom = new Dictionary<IntVec3, IntVec3> { [startCell] = startCell };
+            Queue<IntVec3> frontier = new Queue<IntVec3>();
+            frontier.Enqueue(startCell);
+
+            while (frontier.Count > 0)
+            {
+                IntVec3 currentCell = frontier.Dequeue();
+                foreach (IntVec3 direction in FlightDirections)
+                {
+                    IntVec3 nextCell = currentCell + direction;
+                    if (cameFrom.ContainsKey(nextCell)) continue;
+
+                    bool isGoal = nextCell == goalCell;
+                    if (!isGoal && !CanFlyThrough(nextCell, doorsAllowed)) continue;
+
+                    bool isDiagonal = direction.x != 0 && direction.z != 0;
+                    if (isDiagonal && (!CanFlyThrough(currentCell + new IntVec3(direction.x, 0, 0), doorsAllowed) || !CanFlyThrough(currentCell + new IntVec3(0, 0, direction.z), doorsAllowed))) continue;
+
+                    cameFrom[nextCell] = currentCell;
+                    if (isGoal) return TraceFlightCells(cameFrom, startCell, goalCell);
+                    frontier.Enqueue(nextCell);
+                }
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Turns a cell-by-cell route into as few straight legs as possible: from each point, jump to the farthest
+        /// route cell that can be reached in one clear straight line. Returns the corner cells to fly between, ending at the goal.
+        /// </summary>
+        private List<IntVec3> SmoothFlightCells(IntVec3 startCell, List<IntVec3> flightCells, bool doorsAllowed)
+        {
+            List<IntVec3> waypoints = new List<IntVec3>();
+            IntVec3 legStart = startCell;
+            int nextIndex = 0;
+
+            while (nextIndex < flightCells.Count)
+            {
+                int farthestVisibleIndex = nextIndex;
+                for (int candidateIndex = flightCells.Count - 1; candidateIndex > nextIndex; candidateIndex--)
+                {
+                    if (!IsFlightLineClear(legStart, flightCells[candidateIndex], doorsAllowed)) continue;
+                    farthestVisibleIndex = candidateIndex;
+                    break;
+                }
+
+                waypoints.Add(flightCells[farthestVisibleIndex]);
+                legStart = flightCells[farthestVisibleIndex];
+                nextIndex = farthestVisibleIndex + 1;
+            }
+            return waypoints;
+        }
+
+        /// <summary>
+        /// True if Gungnir can fly in one straight line between two cells: every cell on the line is flyable,
+        /// and no diagonal step squeezes between two blocked cells.
+        /// </summary>
+        private bool IsFlightLineClear(IntVec3 fromCell, IntVec3 toCell, bool doorsAllowed)
+        {
+            IntVec3 previousCell = fromCell;
+            foreach (IntVec3 cell in LineStrike.CellsOnLine(fromCell, toCell))
+            {
+                if (!CanFlyThrough(cell, doorsAllowed)) return false;
+
+                IntVec3 step = cell - previousCell;
+                bool isDiagonalStep = step.x != 0 && step.z != 0;
+                if (isDiagonalStep && (!CanFlyThrough(previousCell + new IntVec3(step.x, 0, 0), doorsAllowed) || !CanFlyThrough(previousCell + new IntVec3(0, 0, step.z), doorsAllowed))) return false;
+
+                previousCell = cell;
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// Walks the "came from" links back from the goal to the start, then flips them into flying order.
+        /// </summary>
+        private static List<IntVec3> TraceFlightCells(Dictionary<IntVec3, IntVec3> cameFrom, IntVec3 startCell, IntVec3 goalCell)
+        {
+            List<IntVec3> flightCells = new List<IntVec3>();
+            for (IntVec3 cell = goalCell; cell != startCell; cell = cameFrom[cell])
+                flightCells.Add(cell);
+
+            flightCells.Reverse();
+            return flightCells;
+        }
 
         /// <summary>
         /// Takes Gungnir out of the thrower's hands and starts a flight at the target.
@@ -199,6 +324,12 @@ namespace Gungnir
             }
 
             MoveAlongPath();
+            if (!hasDrawAngle)
+            {
+                drawAngle = travelAngle;
+                hasDrawAngle = true;
+            }
+            drawAngle = Mathf.MoveTowardsAngle(drawAngle, travelAngle, MaximumTurnDegreesPerTick);
             if (Destroyed) return;
             if (pathCells.Count == 0 && Position.InHorDistOf(destinationPawn.Position, 1.5f)) ArriveAtDestination();
         }
@@ -265,71 +396,95 @@ namespace Gungnir
         }
 
         /// <summary>
-        /// Recomputes the path to the destination. Throw: first with closed doors as walls, then with doors passable.
-        /// Returns false if there's no route at all.
+        /// Recomputes the flight route to the destination: around everything first, through doors only if there's no other way.
+        /// Returns false if there's no route at all, and the caller falls back to a straight flight at the wall.
         /// </summary>
         private bool TryRepath()
         {
             lastDestinationCell = destinationPawn.Position;
             ticksUntilRepath = RepathIntervalTicks;
 
-            return TryFindPath(TraverseMode.NoPassClosedDoors) || TryFindPath(TraverseMode.PassDoors);
+            return TryFindFlightPath(false) || TryFindFlightPath(true);
         }
 
         /// <summary>
-        /// Asks the pathfinder for one route and copies its cells into pathCells. Returns false if none was found.
+        /// Finds a flight route with or without passing through closed doors, and smooths it into waypoints. Returns false if none exists.
         /// </summary>
-        private bool TryFindPath(TraverseMode traverseMode)
+        private bool TryFindFlightPath(bool doorsAllowed)
         {
-            PawnPath path = Map.pathFinder.FindPathNow(Position, destinationPawn, TraverseParms.For(traverseMode), null, PathEndMode.OnCell);
-            if (!path.Found)
-            {
-                path.ReleaseToPool();
-                return false;
-            }
+            List<IntVec3> flightCells = FindFlightCells(Position, destinationPawn.Position, doorsAllowed);
+            if (flightCells == null) return false;
 
-            pathCells.Clear();
-            for (int nodesAhead = 1; nodesAhead < path.NodesLeftCount; nodesAhead++)
-            {
-                pathCells.Add(path.Peek(nodesAhead));
-            }
-
-            path.ReleaseToPool();
+            pathCells = SmoothFlightCells(Position, flightCells, doorsAllowed);
+            pathAllowsDoors = doorsAllowed;
             return true;
         }
 
         /// <summary>
-        /// Moves along the path this tick.
+        /// Flies toward the next waypoint in small steps, rounding off each corner, and tells OnEnteredCell about every cell it crosses.
         /// </summary>
         private void MoveAlongPath()
         {
             float movementLeft = CellsPerTick;
             while (movementLeft > 0f && pathCells.Count > 0)
             {
-                Vector3 nextCellCenter = pathCells[0].ToVector3Shifted();
-                nextCellCenter.y = exactPosition.y;
+                Vector3 waypointCenter = FlatCenter(pathCells[0]);
+                Vector3 towardWaypoint = waypointCenter - exactPosition;
+                float distanceToWaypoint = towardWaypoint.magnitude;
+                bool hasNextWaypoint = pathCells.Count > 1;
 
-                Vector3 towardNextCell = nextCellCenter - exactPosition;
-                float distanceToNextCell = towardNextCell.magnitude;
-                if (distanceToNextCell > 0.001f) travelAngle = towardNextCell.AngleFlat();
-
-                if (distanceToNextCell <= movementLeft)
+                if (hasNextWaypoint && distanceToWaypoint < CornerRoundingDistance && IsGentleTurn(pathCells[0], pathCells[1]))
                 {
-                    exactPosition = nextCellCenter;
-                    movementLeft -= distanceToNextCell;
-                    OnEnteredCell(pathCells[0]);
-                    if (Destroyed) return;
                     pathCells.RemoveAt(0);
+                    continue;
                 }
-                else
-                {
-                    exactPosition += towardNextCell / distanceToNextCell * movementLeft;
-                    movementLeft = 0f;
-                }
-            }
 
-            IntVec3 currentCell = exactPosition.ToIntVec3();
-            if (currentCell != Position) Position = currentCell;
+                Vector3 aimPoint = waypointCenter;
+                if (hasNextWaypoint && distanceToWaypoint < CornerRoundingDistance)
+                {
+                    float cornerBlend = 1f - distanceToWaypoint / CornerRoundingDistance;
+                    aimPoint = Vector3.Lerp(waypointCenter, FlatCenter(pathCells[1]), cornerBlend * 0.5f);
+                }
+
+                float stepLength = Mathf.Min(movementLeft, MaximumStepLength);
+                if (!hasNextWaypoint) stepLength = Mathf.Min(stepLength, distanceToWaypoint);
+
+                Vector3 step = (aimPoint - exactPosition).normalized * stepLength;
+                IntVec3 steppedCell = (exactPosition + step).ToIntVec3();
+                if (steppedCell != Position && !CanFlyThrough(steppedCell, pathAllowsDoors)) step = towardWaypoint.normalized * Mathf.Min(stepLength, distanceToWaypoint);
+
+                exactPosition += step;
+                movementLeft -= stepLength;
+                if (step.sqrMagnitude > 0.0001f) travelAngle = step.AngleFlat();
+
+                IntVec3 currentCell = exactPosition.ToIntVec3();
+                if (currentCell == Position) continue;
+
+                Position = currentCell;
+                OnEnteredCell(currentCell);
+                if (Destroyed) return;
+            }
+        }
+
+        /// <summary>
+        /// True if turning at this waypoint toward the next one is 90 degrees or less. Sharper turns aren't rounded,
+        /// because the blend point would be behind Gungnir and make it double back.
+        /// </summary>
+        private bool IsGentleTurn(IntVec3 cornerCell, IntVec3 nextCell)
+        {
+            Vector3 incomingDirection = FlatCenter(cornerCell) - exactPosition;
+            Vector3 outgoingDirection = FlatCenter(nextCell) - FlatCenter(cornerCell);
+            return Vector3.Dot(incomingDirection, outgoingDirection) >= 0f;
+        }
+
+        /// <summary>
+        /// A cell's center at Gungnir's flying height.
+        /// </summary>
+        private Vector3 FlatCenter(IntVec3 cell)
+        {
+            Vector3 center = cell.ToVector3Shifted();
+            center.y = exactPosition.y;
+            return center;
         }
 
         /// <summary>
@@ -451,7 +606,7 @@ namespace Gungnir
 
             if (!DestinationIsValid)
             {
-                if (IsReturning) DropGungnirHere();
+                if (IsReturnFlight) DropGungnirHere();
                 else ReturnOrDrop();
                 return;
             }
@@ -460,6 +615,25 @@ namespace Gungnir
 
             mode = modeBeforeStuck;
             if (!TryRepath()) StartStraightFlight();
+            if (!hasDrawAngle)
+            {
+                drawAngle = travelAngle;
+                hasDrawAngle = true;
+            }
+            drawAngle = Mathf.MoveTowardsAngle(drawAngle, travelAngle, MaximumTurnDegreesPerTick);
+        }
+
+        /// <summary>
+        /// True if a flying spear can pass through this cell. Terrain doesn't matter (water, mud, soil are all the same in the air),
+        /// and pawns don't block. Walls, mountains and other full buildings do. Closed doors block unless doors are allowed.
+        /// </summary>
+        private bool CanFlyThrough(IntVec3 cell, bool doorsAllowed)
+        {
+            if (!cell.InBounds(Map)) return false;
+
+            Building blocker = LineStrike.GetBlocker(cell, Map);
+            if (blocker == null) return true;
+            return doorsAllowed && blocker is Building_Door;
         }
 
         /// <summary>
@@ -528,7 +702,7 @@ namespace Gungnir
             if (gungnir == null) return;
 
             Vector2 drawSize = gungnir.def.graphicData.drawSize;
-            Quaternion rotation = Quaternion.AngleAxis(travelAngle - SpriteTipAngle, Vector3.up);
+            Quaternion rotation = Quaternion.AngleAxis(drawAngle - SpriteTipAngle, Vector3.up);
             Matrix4x4 matrix = Matrix4x4.TRS(exactPosition, rotation, new Vector3(drawSize.x, 1f, drawSize.y));
             Graphics.DrawMesh(MeshPool.plane10, matrix, gungnir.Graphic.MatSingle, 0);
         }
@@ -557,6 +731,9 @@ namespace Gungnir
             Scribe_Values.Look(ref chargeWallCell, "chargeWallCell", IntVec3.Invalid);
             Scribe_Collections.Look(ref alreadyHitThings, "alreadyHitThings", LookMode.Reference);
             Scribe_Values.Look(ref modeBeforeStuck, "modeBeforeStuck");
+            Scribe_Values.Look(ref pathAllowsDoors, "pathAllowsDoors");
+            Scribe_Values.Look(ref drawAngle, "drawAngle");
+            Scribe_Values.Look(ref hasDrawAngle, "hasDrawAngle");
             if (Scribe.mode == LoadSaveMode.PostLoadInit && alreadyHitThings == null) alreadyHitThings = new HashSet<Thing>();
             if (Scribe.mode == LoadSaveMode.PostLoadInit && pathCells == null) pathCells = new List<IntVec3>();
         }
