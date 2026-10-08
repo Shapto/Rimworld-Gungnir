@@ -165,7 +165,7 @@ namespace Gungnir
         /// <summary>
         /// Takes Gungnir out and sends it back to the wielder, or drops it if nobody can catch it.
         /// </summary>
-        private void ReleaseAndSendHome()
+        public void ReleaseAndSendHome()
         {
             Thing gungnir = LodgedGungnir;
             if (gungnir == null || pawn.MapHeld == null) return;

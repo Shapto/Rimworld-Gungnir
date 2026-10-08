@@ -80,6 +80,8 @@
     <Compile Include="Hediff_GungnirDroning.cs" />
     <Compile Include="Hediff_GungnirOpenHand.cs" />
     <Compile Include="JobDriver_RipOutGungnir.cs" />
+    <Compile Include="Patch_PawnCarryTracker_TryStartCarry.cs" />
+    <Compile Include="Patch_Pawn_DeSpawn.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

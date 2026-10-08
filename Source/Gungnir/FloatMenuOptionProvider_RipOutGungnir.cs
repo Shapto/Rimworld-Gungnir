@@ -27,9 +27,10 @@ namespace Gungnir
             Hediff_GungnirDroning droning = clickedPawn.health?.hediffSet?.hediffs
                 .OfType<Hediff_GungnirDroning>()
                 .FirstOrDefault(hediff => hediff.LodgedGungnir != null);
-            if (droning == null || GungnirUtility.WielderCanCatch(droning.wielder, context.map)) return null;
+            Pawn puller = context.FirstSelectedPawn;
+            if (droning == null || (puller != droning.wielder && GungnirUtility.WielderCanCatch(droning.wielder, context.map))) return null;
 
-            return MakeOption(context.FirstSelectedPawn, clickedPawn, "Gungnir_RipOutOfPawn".Translate(clickedPawn.LabelShort));
+            return MakeOption(puller, clickedPawn, "Gungnir_RipOutOfPawn".Translate(clickedPawn.LabelShort));
         }
 
         protected override FloatMenuOption GetSingleOption(FloatMenuContext context)
