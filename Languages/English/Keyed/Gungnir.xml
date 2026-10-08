@@ -5,12 +5,12 @@
   <Gungnir_LocationReturning>Gungnir is returning.</Gungnir_LocationReturning>
   <Gungnir_LocationInFlight>Gungnir is in flight.</Gungnir_LocationInFlight>
   <Gungnir_RecallNowhere>Gungnir has nowhere to return from.</Gungnir_RecallNowhere>
-  <Gungnir_RecallOtherMap>Gungnir is on another map.</Gungnir_RecallOtherMap>
+  <Gungnir_RecallOtherMap>Gungnir is in another map.</Gungnir_RecallOtherMap>
   <Gungnir_RecallAlreadyReturning>Gungnir is already returning.</Gungnir_RecallAlreadyReturning>
-  <Gungnir_RecallLodgedInSelf>Gungnir is lodged in this pawn. It has to be ripped out.</Gungnir_RecallLodgedInSelf>
+  <Gungnir_RecallLodgedInSelf>Gungnir is lodged in this pawn. It must be ripped out.</Gungnir_RecallLodgedInSelf>
   <Gungnir_RipOutLabel>Rip out Gungnir</Gungnir_RipOutLabel>
-  <Gungnir_RipOutDescription>Tear Gungnir out of this pawn's own body. Takes two seconds that can't be interrupted, and the harpoon does damage on its way out.</Gungnir_RipOutDescription>
-  <Gungnir_RipOutDowned>Can't rip it out while downed.</Gungnir_RipOutDowned>
+  <Gungnir_RipOutDescription>Rip Gungnir out of this pawn's own body. Takes two seconds that can't be interrupted. Damages the pawn on removal.</Gungnir_RipOutDescription>
+  <Gungnir_RipOutDowned>Can't rip Gungnir out while downed.</Gungnir_RipOutDowned>
   <Gungnir_RipOutAlready>Already ripping it out.</Gungnir_RipOutAlready>
   <Gungnir_RipOutOfPawn>Rip Gungnir out of {0}</Gungnir_RipOutOfPawn>
   <Gungnir_PullOutOfWall>Pull Gungnir out of the wall</Gungnir_PullOutOfWall>
