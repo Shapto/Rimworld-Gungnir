@@ -38,9 +38,10 @@ namespace Gungnir
             GungnirFlight stuckFlight = context.map.listerThings.ThingsOfDef(GungnirDefOf.Gungnir_Flight)
                 .OfType<GungnirFlight>()
                 .FirstOrDefault(flight => flight.IsStuck && (flight.Position == context.ClickedCell || flight.StuckWallCell == context.ClickedCell));
-            if (stuckFlight == null || GungnirUtility.WielderCanCatch(stuckFlight.Wielder, context.map)) return null;
+            Pawn puller = context.FirstSelectedPawn;
+            if (stuckFlight == null || (puller != stuckFlight.Wielder && GungnirUtility.WielderCanCatch(stuckFlight.Wielder, context.map))) return null;
 
-            return MakeOption(context.FirstSelectedPawn, stuckFlight, "Gungnir_PullOutOfWall".Translate());
+            return MakeOption(puller, stuckFlight, "Gungnir_PullOutOfWall".Translate());
         }
 
         /// <summary>
