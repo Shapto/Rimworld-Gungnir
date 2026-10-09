@@ -573,8 +573,11 @@ namespace Gungnir
 
             if (wall == null || wall.Destroyed)
             {
-                if (wall != null) GungnirDefOf.Gungnir_Pierce.PlayOneShot(new TargetInfo(wallCell, Map));
-                GungnirEffects.ThrowImpact(SpeartipPosition, drawAngle, Map, 0.7f);
+                if (wall != null)
+                {
+                    GungnirDefOf.Gungnir_Pierce.PlayOneShot(new TargetInfo(wallCell, Map));
+                    GungnirEffects.ThrowImpact(SpeartipPosition, drawAngle, Map, 0.7f);
+                }
                 if (!TryRepath()) StartStraightFlight();
                 return;
             }
