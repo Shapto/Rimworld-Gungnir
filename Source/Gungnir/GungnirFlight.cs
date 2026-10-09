@@ -1,6 +1,7 @@
 ﻿using RimWorld;
 using SingularityFramework.Geometry;
 using SingularityFramework.Relics;
+using SingularityFramework.Visuals;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -82,6 +83,11 @@ namespace Gungnir
         public bool IsStuck => mode == GungnirFlightMode.Stuck;
 
         public IntVec3 StuckWallCell => stuckWallCell;
+
+        /// <summary>
+        /// Where the speartip is drawn right now, read from Gungnir's own sprite by the framework.
+        /// </summary>
+        private Vector3 SpeartipPosition => CarriedGungnir != null ? WeaponEffects.TipInWorld(CarriedGungnir.def, DrawMatrix) : exactPosition;
 
         public override Vector3 DrawPos => exactPosition;
 
@@ -377,6 +383,7 @@ namespace Gungnir
         private bool TryImpaleAndLodge(Pawn victim)
         {
             GungnirDefOf.Gungnir_Impact.PlayOneShot(new TargetInfo(victim.Position, victim.Map));
+            GungnirEffects.ThrowImpact(SpeartipPosition, drawAngle, Map);
             DamageWorker.DamageResult damageResult = victim.TakeDamage(MakeGungnirDamage(travelAngle));
             BodyPartRecord hitPart = damageResult.LastHitPart;
             if (victim.Dead || hitPart == null || victim.health.hediffSet.PartIsMissing(hitPart)) return false;
@@ -466,6 +473,7 @@ namespace Gungnir
                 hasDrawAngle = true;
             }
             drawAngle = Mathf.MoveTowardsAngle(drawAngle, travelAngle, MaximumTurnDegreesPerTick);
+            GungnirEffects.ThrowTrail(SpeartipPosition, drawAngle, Map);
         }
 
         /// <summary>
@@ -503,6 +511,7 @@ namespace Gungnir
             Building_Door door = cell.GetDoor(Map);
             if (door != null && !door.Open)
             {
+                GungnirEffects.ThrowImpact(SpeartipPosition, drawAngle, Map, 0.7f);
                 GungnirDefOf.Gungnir_Pierce.PlayOneShot(new TargetInfo(cell, Map));
                 door.TakeDamage(MakeGungnirDamage(travelAngle));
             }
@@ -526,7 +535,11 @@ namespace Gungnir
                 if (thing is Pawn || thing is Building) piercedSomething = true;
                 thing.TakeDamage(MakeGungnirDamage(travelAngle));
             }
-            if (piercedSomething) GungnirDefOf.Gungnir_Pierce.PlayOneShot(new TargetInfo(cell, Map));
+            if (piercedSomething)
+            {
+                GungnirEffects.ThrowImpact(SpeartipPosition, drawAngle, Map, 0.7f);
+                GungnirDefOf.Gungnir_Pierce.PlayOneShot(new TargetInfo(cell, Map));
+            }
         }
 
         /// <summary>
@@ -561,6 +574,7 @@ namespace Gungnir
             if (wall == null || wall.Destroyed)
             {
                 if (wall != null) GungnirDefOf.Gungnir_Pierce.PlayOneShot(new TargetInfo(wallCell, Map));
+                GungnirEffects.ThrowImpact(SpeartipPosition, drawAngle, Map, 0.7f);
                 if (!TryRepath()) StartStraightFlight();
                 return;
             }
@@ -568,12 +582,14 @@ namespace Gungnir
             if (TryFindCellBehindWall(wallCell, out IntVec3 cellBehindWall))
             {
                 GungnirDefOf.Gungnir_Pierce.PlayOneShot(new TargetInfo(wallCell, Map));
+                GungnirEffects.ThrowImpact(SpeartipPosition, drawAngle, Map, 0.7f);
                 MoveTo(cellBehindWall);
                 if (!TryRepath()) StartStraightFlight();
                 return;
             }
 
             GungnirDefOf.Gungnir_Impact.PlayOneShot(new TargetInfo(wallCell, Map));
+            GungnirEffects.ThrowImpact(SpeartipPosition, drawAngle, Map);
             stuckWallCell = wallCell;
             modeBeforeStuck = mode;
             mode = GungnirFlightMode.Stuck;
@@ -702,16 +718,26 @@ namespace Gungnir
             return gungnir;
         }
 
+        /// <summary>
+        /// Where and how Gungnir's sprite is drawn: at the flight's position, turned so the tip points along drawAngle, at the weapon's draw size.
+        /// </summary>
+        private Matrix4x4 DrawMatrix
+        {
+            get
+            {
+                Vector2 drawSize = CarriedGungnir.def.graphicData.drawSize;
+                Quaternion rotation = Quaternion.AngleAxis(drawAngle - SpriteTipAngle, Vector3.up);
+                return Matrix4x4.TRS(exactPosition, rotation, new Vector3(drawSize.x, 1f, drawSize.y));
+            }
+        }
+
         protected override void DrawAt(Vector3 drawLocation, bool flip = false)
         {
             Thing gungnir = CarriedGungnir;
             if (gungnir == null) return;
-
-            Vector2 drawSize = gungnir.def.graphicData.drawSize;
-            Quaternion rotation = Quaternion.AngleAxis(drawAngle - SpriteTipAngle, Vector3.up);
-            Matrix4x4 matrix = Matrix4x4.TRS(exactPosition, rotation, new Vector3(drawSize.x, 1f, drawSize.y));
-            Graphics.DrawMesh(MeshPool.plane10, matrix, gungnir.Graphic.MatSingle, 0);
+            Graphics.DrawMesh(MeshPool.plane10, DrawMatrix, gungnir.Graphic.MatSingle, 0);
         }
+
 
         public ThingOwner GetDirectlyHeldThings() => carriedGungnir;
 

@@ -24,6 +24,8 @@ namespace Gungnir
         public static SoundDef Gungnir_Pierce;
         public static SoundDef Gungnir_Leave;
         public static SoundDef Gungnir_Catch;
+        public static FleckDef Gungnir_FleckStreak;
+        public static FleckDef Gungnir_FleckBurst;
         static GungnirDefOf() => DefOfHelper.EnsureInitializedInCtor(typeof(GungnirDefOf));
     }
 }

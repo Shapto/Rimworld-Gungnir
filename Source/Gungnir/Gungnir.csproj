@@ -73,6 +73,7 @@
     <Compile Include="CompAbilityEffect_GungnirThrow.cs" />
     <Compile Include="FloatMenuOptionProvider_RipOutGungnir.cs" />
     <Compile Include="GungnirDefOf.cs" />
+    <Compile Include="GungnirEffects.cs" />
     <Compile Include="GungnirFlight.cs" />
     <Compile Include="GungnirMod.cs" />
     <Compile Include="GungnirTextures.cs" />

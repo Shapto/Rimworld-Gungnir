@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Defs>
+	<FleckDef>
+		<defName>Gungnir_FleckStreak</defName>
+		<fleckSystemClass>FleckSystemStatic</fleckSystemClass>
+		<altitudeLayer>MoteOverhead</altitudeLayer>
+		<fadeInTime>0</fadeInTime>
+		<solidTime>0.05</solidTime>
+		<fadeOutTime>0.35</fadeOutTime>
+		<graphicData>
+			<texPath>VFX/Gungnir_Streak</texPath>
+			<graphicClass>Graphic_Fleck</graphicClass>
+			<shaderType>MoteGlow</shaderType>
+			<drawSize>1</drawSize>
+		</graphicData>
+	</FleckDef>
+
+	<FleckDef>
+		<defName>Gungnir_FleckBurst</defName>
+		<fleckSystemClass>FleckSystemStatic</fleckSystemClass>
+		<altitudeLayer>MoteOverhead</altitudeLayer>
+		<fadeInTime>0</fadeInTime>
+		<solidTime>0.08</solidTime>
+		<fadeOutTime>0.4</fadeOutTime>
+		<growthRate>2</growthRate>
+		<graphicData>
+			<texPath>VFX/Gungnir_Burst</texPath>
+			<graphicClass>Graphic_Fleck</graphicClass>
+			<shaderType>MoteGlow</shaderType>
+			<drawSize>1</drawSize>
+		</graphicData>
+	</FleckDef>
+</Defs>
