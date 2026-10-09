@@ -35,6 +35,8 @@ namespace Gungnir
             map.flecks.CreateFleck(streakData);
         }
 
+
+
         /// <summary>
         /// The short streak dropped behind Gungnir every tick in flight; they overlap into one continuous trail.
         /// </summary>
@@ -54,4 +56,5 @@ namespace Gungnir
             ThrowStreak(position, travelAngle, map, ImpactStreakLength * scale, ImpactStreakWidth * scale);
         }
     }
+
 }
